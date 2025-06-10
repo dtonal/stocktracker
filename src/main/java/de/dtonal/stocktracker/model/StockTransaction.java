@@ -27,8 +27,8 @@ public class StockTransaction {
     @Column(name = "transaction_date", nullable = false)
     private LocalDateTime transactionDate;
 
-    @Column(name = "quantity", nullable = false)
-    private int quantity;
+    @Column(name = "quantity", nullable = false, precision = 15, scale = 6)
+    private BigDecimal quantity;
 
     @Column(name = "price_per_share", nullable = false, precision = 10, scale = 2)
     private BigDecimal pricePerShare;
@@ -48,7 +48,7 @@ public class StockTransaction {
     }
 
     public StockTransaction(Stock stock, Portfolio portfolio, LocalDateTime transactionDate,
-                          int quantity, BigDecimal pricePerShare, TransactionType transactionType) {
+                          BigDecimal quantity, BigDecimal pricePerShare, TransactionType transactionType) {
         this.stock = stock;
         this.portfolio = portfolio;
         this.transactionDate = transactionDate;
@@ -87,11 +87,11 @@ public class StockTransaction {
         this.transactionDate = transactionDate;
     }
 
-    public int getQuantity() {
+    public BigDecimal getQuantity() {
         return quantity;
     }
 
-    public void setQuantity(int quantity) {
+    public void setQuantity(BigDecimal quantity) {
         this.quantity = quantity;
     }
 
@@ -123,7 +123,7 @@ public class StockTransaction {
      * Berechnet den Gesamtwert der Transaktion (quantity * pricePerShare)
      */
     public BigDecimal getTotalValue() {
-        return pricePerShare.multiply(BigDecimal.valueOf(quantity));
+        return pricePerShare.multiply(quantity);
     }
 
     @PrePersist

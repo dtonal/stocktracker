@@ -43,4 +43,9 @@ public interface StockTransactionRepository extends JpaRepository<StockTransacti
      */
     List<StockTransaction> findByPortfolioAndTransactionDateBetween(
             Portfolio portfolio, LocalDateTime startDate, LocalDateTime endDate);
+
+    /**
+     * Findet alle Transaktionen für eine bestimmte Aktie in einem Portfolio
+     */
+    List<StockTransaction> findByPortfolioAndStock(Portfolio portfolio, Stock stock);
 } 
