@@ -1,7 +1,12 @@
 package de.dtonal.stocktracker.repository;
 
-import de.dtonal.stocktracker.model.*;
-import de.dtonal.stocktracker.repository.*;
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,14 +15,12 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import de.dtonal.stocktracker.model.Portfolio;
+import de.dtonal.stocktracker.model.Role;
+import de.dtonal.stocktracker.model.Stock;
+import de.dtonal.stocktracker.model.StockTransaction;
+import de.dtonal.stocktracker.model.TransactionType;
+import de.dtonal.stocktracker.model.User;
 
 @DataJpaTest
 class UserPortfolioFlowTest {
