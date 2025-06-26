@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.access.prepost.PostAuthorize;
 
 import de.dtonal.stocktracker.model.Role;
 import de.dtonal.stocktracker.model.User;
@@ -46,6 +47,11 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @PostAuthorize(
+        "hasRole('ADMIN') or " +
+        "returnObject.isEmpty() or " + // Erlaubt leere Ergebnisse (User not found)
+        "returnObject.get().getEmail() == authentication.principal.username"
+    )
     public Optional<User> findUserById(Long id) {
         return userRepository.findById(id);
     }
