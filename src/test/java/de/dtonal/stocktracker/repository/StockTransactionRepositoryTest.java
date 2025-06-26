@@ -199,8 +199,8 @@ public class StockTransactionRepositoryTest {
 
     @Test
     public void testFindByPortfolioAndTransactionDateBetween() {
-        // Verwende explizite Zeitstempel mit Sekunden-Abständen
-        LocalDateTime now = LocalDateTime.now();
+        // Verwende einen festen Zeitstempel, um den Test deterministisch zu machen
+        LocalDateTime now = LocalDateTime.of(2024, 1, 15, 12, 0, 0);
         LocalDateTime yesterday = now.minusDays(1).withHour(10).withMinute(0).withSecond(0);
         LocalDateTime today = now.withHour(14).withMinute(0).withSecond(0);
         LocalDateTime tomorrow = now.plusDays(1).withHour(10).withMinute(0).withSecond(0);
