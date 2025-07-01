@@ -48,4 +48,9 @@ public interface StockTransactionRepository extends JpaRepository<StockTransacti
      * Findet alle Transaktionen für eine bestimmte Aktie in einem Portfolio
      */
     List<StockTransaction> findByPortfolioAndStock(Portfolio portfolio, Stock stock);
+
+    /**
+     * Findet alle Transaktionen eines Portfolios anhand der Aktie und der Portfolio-ID
+     */
+    List<StockTransaction> findByPortfolioIdAndStockSymbol(Long portfolioId, String stockSymbol);
 } 

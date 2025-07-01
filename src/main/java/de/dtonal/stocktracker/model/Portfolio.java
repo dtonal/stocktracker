@@ -67,6 +67,10 @@ public class Portfolio {
         this.description = description;
     }
 
+    public void setId(Long id) {
+        this.id = id;
+    }
+
     public User getUser() {
         return user;
     }
