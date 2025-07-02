@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.Data;
 import jakarta.persistence.GenerationType;
+import lombok.NoArgsConstructor;
 
 /**
  * Repräsentiert ein einzelnes Aktienportfolio, das von einem Benutzer verwaltet wird.
@@ -14,6 +15,7 @@ import jakarta.persistence.GenerationType;
 @Data
 @Entity
 @Table(name = "portfolio")
+@NoArgsConstructor
 public class Portfolio {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -30,7 +32,7 @@ public class Portfolio {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @OneToMany(mappedBy = "portfolio", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "portfolio", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<StockTransaction> transactions = new ArrayList<>();
 
     @Column(name = "created_at", nullable = false)
@@ -38,10 +40,6 @@ public class Portfolio {
 
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
-
-    public Portfolio() {
-        // Default constructor for JPA
-    }
 
     public Portfolio(String name, String description, User user) {
         this.name = name;
@@ -133,5 +131,15 @@ public class Portfolio {
     @Override
     public int hashCode() {
         return id.hashCode();
+    }
+
+    public void addTransaction(StockTransaction transaction) {
+        transactions.add(transaction);
+        transaction.setPortfolio(this);
+    }
+
+    public void removeTransaction(StockTransaction transaction) {
+        transactions.remove(transaction);
+        transaction.setPortfolio(null);
     }
 } 

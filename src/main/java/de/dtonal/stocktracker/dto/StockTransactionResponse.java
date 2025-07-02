@@ -17,7 +17,7 @@ public class StockTransactionResponse {
     private String stockSymbol;
     private TransactionType transactionType;
     private BigDecimal quantity;
-    private BigDecimal price;
+    private BigDecimal pricePerShare;
     private LocalDateTime transactionDate;
 
     public StockTransactionResponse(StockTransaction transaction) {
@@ -26,7 +26,7 @@ public class StockTransactionResponse {
         this.stockSymbol = transaction.getStock().getSymbol();
         this.transactionType = transaction.getTransactionType();
         this.quantity = transaction.getQuantity();
-        this.price = transaction.getPricePerShare();
+        this.pricePerShare = transaction.getPricePerShare();
         this.transactionDate = transaction.getTransactionDate();
     }
 } 

@@ -114,12 +114,13 @@ class PortfolioServiceImplTest {
     @Test
     @WithMockUser(username = "test@example.com")
     void addTransaction_shouldSucceed_whenUserIsOwner() {
-        when(portfolioRepository.findById("stock-id-789")).thenReturn(Optional.of(portfolio));
-        when(portfolioRepository.isOwnerOfPortfolio("stock-id-789", "test@example.com")).thenReturn(true);
-        when(stockRepository.findById("stock-id-789")).thenReturn(Optional.of(stock));
-        when(stockTransactionRepository.save(any(StockTransaction.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+        // Mocking repository calls
+        when(portfolioRepository.findById("portfolio-id-456")).thenReturn(Optional.of(portfolio));
+        when(stockRepository.findBySymbol("AAPL")).thenReturn(Collections.singletonList(stock));
+        when(portfolioRepository.isOwnerOfPortfolio("portfolio-id-456", "test@example.com")).thenReturn(true);
+        when(portfolioRepository.save(any(Portfolio.class))).thenReturn(portfolio);
 
+        // Creating the request DTO
         StockTransactionRequest request = new StockTransactionRequest();
         request.setStockId("stock-id-789");
         request.setStockSymbol("AAPL");
@@ -128,9 +129,16 @@ class PortfolioServiceImplTest {
         request.setTransactionDate(LocalDateTime.now());
         request.setTransactionType(TransactionType.BUY);
 
-        StockTransaction transaction = portfolioService.addStockTransaction("stock-id-789", request);
-        assertThat(transaction.getPortfolio()).isEqualTo(portfolio);
+        // Calling the service method
+        StockTransaction transaction = portfolioService.addStockTransaction("portfolio-id-456", request);
+
+        // Asserting the results
+        assertThat(transaction).isNotNull();
         assertThat(transaction.getStock()).isEqualTo(stock);
+        // Verify that the transaction was added to the portfolio's list
+        assertThat(portfolio.getTransactions()).contains(transaction);
+        // Verify that the portfolio was saved, which cascades the save to the transaction
+        verify(portfolioRepository).save(portfolio);
     }
 
     @Test

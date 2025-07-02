@@ -67,19 +67,23 @@ public class PortfolioServiceImpl implements PortfolioService {
         Portfolio portfolio = portfolioRepository.findById(portfolioId)
                 .orElseThrow(() -> new IllegalArgumentException("Portfolio not found"));
 
-        Stock stock = stockRepository.findById(transactionRequest.getStockId())
+        Stock stock = stockRepository.findBySymbol(transactionRequest.getStockSymbol())
+                .stream().findFirst()
                 .orElseThrow(() -> new IllegalArgumentException(
-                        "Stock not found with id: " + transactionRequest.getStockId()));
+                        "Stock not found with symbol: " + transactionRequest.getStockSymbol()));
 
         StockTransaction transaction = new StockTransaction();
-        transaction.setPortfolio(portfolio);
         transaction.setStock(stock);
         transaction.setTransactionType(transactionRequest.getTransactionType());
         transaction.setQuantity(transactionRequest.getQuantity());
         transaction.setPricePerShare(transactionRequest.getPricePerShare());
         transaction.setTransactionDate(transactionRequest.getTransactionDate());
+        
+        portfolio.addTransaction(transaction);
+        
+        portfolioRepository.save(portfolio);
 
-        return stockTransactionRepository.save(transaction);
+        return transaction;
     }
 
     @Override
