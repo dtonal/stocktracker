@@ -24,6 +24,7 @@ import com.jayway.jsonpath.JsonPath;
 import de.dtonal.stocktracker.dto.AuthenticationRequest;
 import de.dtonal.stocktracker.dto.StockTransactionRequest;
 import de.dtonal.stocktracker.model.Portfolio;
+import de.dtonal.stocktracker.model.Role;
 import de.dtonal.stocktracker.model.Stock;
 import de.dtonal.stocktracker.model.TransactionType;
 import de.dtonal.stocktracker.model.User;
@@ -56,6 +57,7 @@ public class CrossUserSecurityIntegrationTest {
 
     private User userA;
     private User userB;
+    private User adminUser;
     private Portfolio portfolioOfUserB;
     private Stock testStock;
 
@@ -68,11 +70,18 @@ public class CrossUserSecurityIntegrationTest {
 
         // Create User A (the attacker)
         userA = new User("User A", "userA@example.com", passwordEncoder.encode("passwordA"));
+        userA.getRoles().add(Role.USER);
         userRepository.save(userA);
 
         // Create User B (the victim)
         userB = new User("User B", "userB@example.com", passwordEncoder.encode("passwordB"));
+        userB.getRoles().add(Role.USER);
         userRepository.save(userB);
+
+        // Create Admin User
+        adminUser = new User("Admin User", "admin@example.com", passwordEncoder.encode("passwordAdmin"));
+        adminUser.getRoles().add(Role.ADMIN);
+        userRepository.save(adminUser);
 
         // Create a portfolio for User B
         portfolioOfUserB = new Portfolio("User B's Portfolio", "", userB);
@@ -126,5 +135,40 @@ public class CrossUserSecurityIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(transactionRequest)))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void testAdminCanAccessOtherUsersPortfolio() throws Exception {
+        // Step 1: Admin authenticates
+        String adminToken = authenticateAndGetToken("admin@example.com", "passwordAdmin");
+
+        // Step 2: Admin tries to access User B's portfolio
+        mockMvc.perform(get("/api/portfolios/" + portfolioOfUserB.getId())
+                .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void testAdminCanAddTransactionToOtherUsersPortfolio() throws Exception {
+        // Step 1: Admin authenticates
+        String adminToken = authenticateAndGetToken("admin@example.com", "passwordAdmin");
+
+        // Step 2: Admin prepares a transaction for User B's portfolio
+        StockTransactionRequest transactionRequest = new StockTransactionRequest(
+            portfolioOfUserB.getId(),
+            testStock.getId(),
+            LocalDateTime.now(),
+            new BigDecimal("50"),
+            new BigDecimal("2"),
+            TransactionType.BUY,
+            testStock.getSymbol()
+        );
+
+        // Step 3: Admin tries to add the transaction to User B's portfolio
+        mockMvc.perform(post("/api/portfolios/" + portfolioOfUserB.getId() + "/transactions")
+                .header("Authorization", "Bearer " + adminToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(transactionRequest)))
+                .andExpect(status().isCreated());
     }
 } 
