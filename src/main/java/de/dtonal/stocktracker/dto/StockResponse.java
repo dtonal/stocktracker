@@ -1,13 +1,21 @@
 package de.dtonal.stocktracker.dto;
 
 import de.dtonal.stocktracker.model.Stock;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
+@Data
+@NoArgsConstructor
 public class StockResponse {
-    private final Long id;
-    private final String symbol;
-    private final String name;
-    private final String exchange;
-    private final String currency;
+    private String id;
+    private String symbol;
+    private String name;
+    private String exchange;
+    private String currency;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
     public StockResponse(Stock stock) {
         this.id = stock.getId();
@@ -15,9 +23,11 @@ public class StockResponse {
         this.name = stock.getName();
         this.exchange = stock.getExchange();
         this.currency = stock.getCurrency();
+        this.createdAt = stock.getCreatedAt();
+        this.updatedAt = stock.getUpdatedAt();
     }
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 

@@ -4,57 +4,29 @@ import de.dtonal.stocktracker.model.StockTransaction;
 import de.dtonal.stocktracker.model.TransactionType;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class StockTransactionResponse {
-    private final Long id;
-    private final StockResponse stock;
-    private final Long portfolioId;
-    private final LocalDateTime transactionDate;
-    private final BigDecimal quantity;
-    private final BigDecimal pricePerShare;
-    private final TransactionType transactionType;
-    private final LocalDateTime createdAt;
+    private String id;
+    private String stockId;
+    private String stockSymbol;
+    private TransactionType transactionType;
+    private BigDecimal quantity;
+    private BigDecimal price;
+    private LocalDateTime transactionDate;
 
     public StockTransactionResponse(StockTransaction transaction) {
         this.id = transaction.getId();
-        this.stock = new StockResponse(transaction.getStock());
-        this.portfolioId = transaction.getPortfolio().getId();
-        this.transactionDate = transaction.getTransactionDate();
-        this.quantity = transaction.getQuantity();
-        this.pricePerShare = transaction.getPricePerShare();
+        this.stockId = transaction.getStock().getId();
+        this.stockSymbol = transaction.getStock().getSymbol();
         this.transactionType = transaction.getTransactionType();
-        this.createdAt = transaction.getCreatedAt();
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public StockResponse getStock() {
-        return stock;
-    }
-
-    public Long getPortfolioId() {
-        return portfolioId;
-    }
-
-    public LocalDateTime getTransactionDate() {
-        return transactionDate;
-    }
-
-    public BigDecimal getQuantity() {
-        return quantity;
-    }
-
-    public BigDecimal getPricePerShare() {
-        return pricePerShare;
-    }
-
-    public TransactionType getTransactionType() {
-        return transactionType;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
+        this.quantity = transaction.getQuantity();
+        this.price = transaction.getPricePerShare();
+        this.transactionDate = transaction.getTransactionDate();
     }
 } 

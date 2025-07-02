@@ -1,39 +1,37 @@
 package de.dtonal.stocktracker.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import de.dtonal.stocktracker.config.ApplicationConfig;
-import de.dtonal.stocktracker.config.JwtAuthFilter;
-import de.dtonal.stocktracker.config.SecurityConfig;
-import de.dtonal.stocktracker.config.TestSecurityConfig;
-import de.dtonal.stocktracker.dto.AuthenticationRequest;
-import de.dtonal.stocktracker.model.Role;
-import de.dtonal.stocktracker.model.User;
-import de.dtonal.stocktracker.service.JwtService;
-import de.dtonal.stocktracker.service.UserServiceImpl;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 
-import java.util.Set;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import de.dtonal.stocktracker.config.ApplicationConfig;
+import de.dtonal.stocktracker.config.SecurityConfig;
+import de.dtonal.stocktracker.dto.AuthenticationRequest;
+import de.dtonal.stocktracker.model.Role;
+import de.dtonal.stocktracker.model.User;
+import de.dtonal.stocktracker.service.JwtService;
+import de.dtonal.stocktracker.service.UserServiceImpl;
 
 @WebMvcTest(controllers = AuthController.class)
 @Import({ SecurityConfig.class, ApplicationConfig.class })
@@ -59,7 +57,7 @@ class AuthControllerTest {
     @BeforeEach
     void setUp() {
         testUser = new User();
-        testUser.setId(1L);
+        testUser.setId("1");
         testUser.setEmail("test@example.com");
         testUser.setPassword("password");
         testUser.setName("Test User");

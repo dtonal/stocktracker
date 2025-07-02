@@ -207,29 +207,25 @@ public class StockTransactionRepositoryTest {
         LocalDateTime nextWeek = now.plusDays(7).withHour(10).withMinute(0).withSecond(0);
 
         StockTransaction transaction1 = new StockTransaction(
-            testStock, testPortfolio, yesterday, 
-            bd("10.5"), bd("150.00"), TransactionType.BUY
-        );
+                testStock, testPortfolio, yesterday,
+                bd("10.5"), bd("150.00"), TransactionType.BUY);
         StockTransaction transaction2 = new StockTransaction(
-            testStock, testPortfolio, today, 
-            bd("5.25"), bd("160.00"), TransactionType.SELL
-        );
+                testStock, testPortfolio, today,
+                bd("5.25"), bd("160.00"), TransactionType.SELL);
         StockTransaction transaction3 = new StockTransaction(
-            testStock, testPortfolio, nextWeek, 
-            bd("3.75"), bd("170.00"), TransactionType.BUY
-        );
+                testStock, testPortfolio, nextWeek,
+                bd("3.75"), bd("170.00"), TransactionType.BUY);
         stockTransactionRepository.saveAll(List.of(transaction1, transaction2, transaction3));
         entityManager.flush();
         entityManager.clear();
 
         List<StockTransaction> found = stockTransactionRepository.findByPortfolioAndTransactionDateBetween(
-            testPortfolio, yesterday, tomorrow);
-        
+                testPortfolio, yesterday, tomorrow);
+
         assertThat(found).hasSize(2);
         assertBigDecimalListEquals(
-            found.stream().map(StockTransaction::getQuantity).toList(),
-            "10.5", "5.25"
-        );
+                found.stream().map(StockTransaction::getQuantity).toList(),
+                "10.5", "5.25");
     }
 
     @Test
@@ -354,7 +350,7 @@ public class StockTransactionRepositoryTest {
 
     @Test
     public void testFindByPortfolioIdEmpty() {
-        List<StockTransaction> found = stockTransactionRepository.findByPortfolioId(999L);
+        List<StockTransaction> found = stockTransactionRepository.findByPortfolioId("999L");
         assertThat(found).isEmpty();
     }
 
@@ -366,7 +362,7 @@ public class StockTransactionRepositoryTest {
 
     @Test
     public void testFindByStockIdEmpty() {
-        List<StockTransaction> found = stockTransactionRepository.findByStockId(999L);
+        List<StockTransaction> found = stockTransactionRepository.findByStockId("999L");
         assertThat(found).isEmpty();
     }
 

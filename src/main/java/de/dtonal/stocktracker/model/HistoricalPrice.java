@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import jakarta.persistence.GenerationType;
 
 /**
  * Speichert die täglich abgerufenen historischen Schlusskurse für jedes Stock-Objekt.
@@ -14,8 +15,9 @@ import java.time.LocalDateTime;
 @Table(name = "historical_prices")
 public class HistoricalPrice {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(length = 36, updatable = false, nullable = false)
+    private String id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "stock_id", nullable = false)
@@ -45,7 +47,7 @@ public class HistoricalPrice {
         this.updatedAt = LocalDateTime.now();
     }
 
-    public long getId() {
+    public String getId() {
         return id;
     }
 
@@ -109,11 +111,11 @@ public class HistoricalPrice {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         HistoricalPrice that = (HistoricalPrice) o;
-        return id == that.id;
+        return id.equals(that.id);
     }
 
     @Override
     public int hashCode() {
-        return (int) (id ^ (id >>> 32));
+        return id.hashCode();
     }
 } 

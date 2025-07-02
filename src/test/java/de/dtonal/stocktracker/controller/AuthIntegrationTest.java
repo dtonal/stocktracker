@@ -46,7 +46,7 @@ public class AuthIntegrationTest {
                 String registrationResponseContent = registrationResult.getResponse().getContentAsString();
                 UserResponse registrationResponse = objectMapper.readValue(registrationResponseContent,
                                 UserResponse.class);
-                Long userId = registrationResponse.getId();
+                String userId = registrationResponse.getId();
                 assertThat(userId).isNotNull();
 
                 // Step 2: Login with the new user
@@ -87,7 +87,7 @@ public class AuthIntegrationTest {
 
                 String registrationResponseContent = registrationResult.getResponse().getContentAsString();
                 UserResponse registrationResponse = objectMapper.readValue(registrationResponseContent, UserResponse.class);
-                Long userId = registrationResponse.getId();
+                String userId = registrationResponse.getId();
                 assertThat(userId).isNotNull();
 
                 // Step 2 & 3: Attempt to access a protected endpoint with an invalid JWT token

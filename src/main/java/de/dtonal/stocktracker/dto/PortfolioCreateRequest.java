@@ -12,6 +12,11 @@ public class PortfolioCreateRequest {
     @Size(max = 255, message = "Description cannot be longer than 255 characters.")
     private String description;
 
+    public PortfolioCreateRequest(String name, String description) {
+        this.name = name;
+        this.description = description;
+    }
+
     public String getName() {
         return name;
     }
@@ -27,4 +32,25 @@ public class PortfolioCreateRequest {
     public void setDescription(String description) {
         this.description = description;
     }
-} 
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null || getClass() != obj.getClass())
+            return false;
+
+        PortfolioCreateRequest that = (PortfolioCreateRequest) obj;
+
+        if (!name.equals(that.name))
+            return false;
+        return description != null ? description.equals(that.description) : that.description == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = name.hashCode();
+        result = 31 * result + (description != null ? description.hashCode() : 0);
+        return result;
+    }
+}

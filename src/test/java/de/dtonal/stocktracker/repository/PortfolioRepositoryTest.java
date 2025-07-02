@@ -229,7 +229,7 @@ public class PortfolioRepositoryTest {
 
     @Test
     public void testFindByUserIdNotFound() {
-        List<Portfolio> found = portfolioRepository.findByUserId(999L);
+        List<Portfolio> found = portfolioRepository.findByUserId("999L");
         assertThat(found).isEmpty();
     }
 }

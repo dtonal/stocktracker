@@ -1,6 +1,8 @@
 package de.dtonal.stocktracker.model;
 
 import jakarta.persistence.*;
+import lombok.Data;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -9,12 +11,14 @@ import java.time.LocalDateTime;
  * Wir verfolgen nicht nur die aktuelle Besitzsituation, sondern die einzelnen Transaktionen,
  * um den Einstandspreis und den Gewinn/Verlust genau berechnen zu können.
  */
+@Data
 @Entity
-@Table(name = "stock_transactions")
+@Table(name = "stock_transaction")
 public class StockTransaction {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(length = 36, updatable = false, nullable = false)
+    private String id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "stock_id", nullable = false)
@@ -59,7 +63,7 @@ public class StockTransaction {
         this.updatedAt = LocalDateTime.now();
     }
 
-    public long getId() {
+    public String getId() {
         return id;
     }
 
@@ -157,11 +161,11 @@ public class StockTransaction {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         StockTransaction that = (StockTransaction) o;
-        return id == that.id;
+        return id.equals(that.id);
     }
 
     @Override
     public int hashCode() {
-        return (int) (id ^ (id >>> 32));
+        return id.hashCode();
     }
 } 

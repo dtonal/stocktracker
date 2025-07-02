@@ -4,17 +4,21 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.Data;
+import jakarta.persistence.GenerationType;
 
 /**
  * Repräsentiert ein einzelnes Aktienportfolio, das von einem Benutzer verwaltet wird.
  * Ein Benutzer kann mehrere Portfolios haben (z.B. "Langfristig", "Experimentell", "Altersvorsorge").
  */
+@Data
 @Entity
-@Table(name = "portfolios")
+@Table(name = "portfolio")
 public class Portfolio {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(length = 36, updatable = false, nullable = false)
+    private String id;
 
     @Column(name = "name", nullable = false)
     private String name;
@@ -47,7 +51,7 @@ public class Portfolio {
         this.updatedAt = LocalDateTime.now();
     }
 
-    public long getId() {
+    public String getId() {
         return id;
     }
 
@@ -67,7 +71,7 @@ public class Portfolio {
         this.description = description;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 
@@ -123,11 +127,11 @@ public class Portfolio {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Portfolio portfolio = (Portfolio) o;
-        return id == portfolio.id;
+        return id.equals(portfolio.id);
     }
 
     @Override
     public int hashCode() {
-        return (int) (id ^ (id >>> 32));
+        return id.hashCode();
     }
 } 

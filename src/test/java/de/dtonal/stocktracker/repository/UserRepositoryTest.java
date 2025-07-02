@@ -7,12 +7,12 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -241,24 +241,16 @@ public class UserRepositoryTest {
     }
 
     @Test
-    public void testCreateDuplicateUserThrowsDataIntegrityViolationException() {
-        User user = new User("John Doe", "john.doe@example.com", passwordEncoder.encode("password"));
-        userRepository.save(user);
-        entityManager.flush();
-        entityManager.clear();
-        User user2 = new User("John Doe", "john.doe@example.com", passwordEncoder.encode("password"));
-        assertThatThrownBy(() -> userRepository.save(user2))
-            .isInstanceOf(DataIntegrityViolationException.class);
-    }
-
-    @Test
     public void testCreateUserWithSameEmailThrowsDataIntegrityViolationException() {
-        User user = new User("John Doe", "john.doe@example.com", passwordEncoder.encode("password"));
+        User user = new User("John_Doe", "john.doe@example.com", passwordEncoder.encode("password"));
         userRepository.save(user);
         entityManager.flush();
         entityManager.clear();
         User user2 = new User("John Doe", "john.doe@example.com", passwordEncoder.encode("password"));
-        assertThatThrownBy(() -> userRepository.save(user2))
-            .isInstanceOf(DataIntegrityViolationException.class);
+        assertThatThrownBy(() -> {
+            userRepository.save(user2);
+            entityManager.flush(); // This will trigger the DataIntegrityViolationException
+        })
+                .isInstanceOf(ConstraintViolationException.class);
     }
 }

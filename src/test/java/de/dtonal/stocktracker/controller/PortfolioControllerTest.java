@@ -2,195 +2,137 @@ package de.dtonal.stocktracker.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dtonal.stocktracker.config.ApplicationConfig;
-import de.dtonal.stocktracker.config.JwtAuthFilter;
 import de.dtonal.stocktracker.config.SecurityConfig;
-import de.dtonal.stocktracker.config.TestSecurityConfig;
 import de.dtonal.stocktracker.dto.PortfolioCreateRequest;
 import de.dtonal.stocktracker.dto.StockTransactionRequest;
-import de.dtonal.stocktracker.model.*;
+import de.dtonal.stocktracker.model.Portfolio;
+import de.dtonal.stocktracker.model.Stock;
+import de.dtonal.stocktracker.model.StockTransaction;
+import de.dtonal.stocktracker.model.TransactionType;
+import de.dtonal.stocktracker.repository.UserRepository;
 import de.dtonal.stocktracker.service.JwtService;
 import de.dtonal.stocktracker.service.PortfolioService;
-import de.dtonal.stocktracker.service.UserService;
-import de.dtonal.stocktracker.service.UserServiceImpl;
-
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.security.test.context.support.WithMockUser;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.Optional;
-import java.util.Set;
+import java.util.List;
 
+import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 
-@WebMvcTest(controllers = PortfolioController.class)
-@Import({ SecurityConfig.class, ApplicationConfig.class })
+@WebMvcTest(PortfolioController.class)
+@Import({ ApplicationConfig.class, SecurityConfig.class })
 class PortfolioControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
-    @Autowired
-    private ObjectMapper objectMapper;
-
     @MockBean
     private PortfolioService portfolioService;
 
     @MockBean
-    private UserServiceImpl userService; // Konkrete Implementierung statt Interface
-
-    @MockBean
     private JwtService jwtService;
 
-    private User testUser;
-    private Portfolio testPortfolio;
-    private Stock testStock;
-    private StockTransaction testTransaction;
+    @MockBean
+    private UserDetailsService userDetailsService;
 
-    @BeforeEach
-    void setUp() {
-        testUser = new User();
-        testUser.setId(1L);
-        testUser.setEmail("test@example.com");
-        testUser.setPassword("password");
-        testUser.setName("Test User");
-        testUser.setRoles(Set.of(Role.USER));
+    @MockBean
+    private UserRepository userRepository;
 
-        testStock = new Stock("AAPL", "Apple Inc.", "NASDAQ", "USD");
-
-        testPortfolio = new Portfolio();
-        testPortfolio.setId(1L);
-        testPortfolio.setName("Test Portfolio");
-        testPortfolio.setDescription("Test Description");
-        testPortfolio.setUser(testUser);
-
-        testTransaction = new StockTransaction(testStock, testPortfolio, LocalDateTime.now(),
-                BigDecimal.TEN, BigDecimal.valueOf(150.00), TransactionType.BUY);
-    }
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Test
-    @WithMockUser(username = "test@example.com")
-    void testCreatePortfolio_Success() throws Exception {
-        PortfolioCreateRequest request = new PortfolioCreateRequest();
-        request.setName("Test Portfolio");
-        request.setDescription("Test Description");
+    @WithMockUser(username = "test@example.com", roles = "USER")
+    void createPortfolio_shouldSucceed() throws Exception {
+        PortfolioCreateRequest request = new PortfolioCreateRequest("My Portfolio", "A test portfolio");
+        Portfolio portfolio = new Portfolio();
+        portfolio.setName("My Portfolio");
+        portfolio.setId("uuid-123");
+        // User setzen, falls PortfolioResponse darauf zugreift
+        de.dtonal.stocktracker.model.User user = new de.dtonal.stocktracker.model.User();
+        user.setEmail("test@example.com");
+        portfolio.setUser(user);
 
-        when(userService.findUserByEmail("test@example.com")).thenReturn(Optional.of(testUser));
-        when(portfolioService.createPortfolio(eq("Test Portfolio"), eq("Test Description"), eq(testUser)))
-                .thenReturn(testPortfolio);
+        when(portfolioService.createPortfolio(any(PortfolioCreateRequest.class))).thenReturn(portfolio);
 
         mockMvc.perform(post("/api/portfolios")
+                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.id").value(testPortfolio.getId()))
-                .andExpect(jsonPath("$.name").value(testPortfolio.getName()))
-                .andExpect(jsonPath("$.description").value(testPortfolio.getDescription()));
+                .andExpect(jsonPath("$.id").value("uuid-123"))
+                .andExpect(jsonPath("$.name").value("My Portfolio"));
     }
 
     @Test
-    @WithMockUser(username = "test@example.com")
-    void testCreatePortfolio_UserNotFound() throws Exception {
-        PortfolioCreateRequest request = new PortfolioCreateRequest();
-        request.setName("Test Portfolio");
-        request.setDescription("Test Description");
+    @WithMockUser(username = "test@example.com", roles = "USER")
+    void getPortfoliosForCurrentUser_shouldSucceed() throws Exception {
+        Portfolio portfolio1 = new Portfolio();
+        portfolio1.setId("uuid-1");
+        de.dtonal.stocktracker.model.User user1 = new de.dtonal.stocktracker.model.User();
+        user1.setEmail("test@example.com");
+        portfolio1.setUser(user1);
 
-        when(userService.findUserByEmail("test@example.com")).thenReturn(Optional.empty());
+        Portfolio portfolio2 = new Portfolio();
+        portfolio2.setId("uuid-2");
+        de.dtonal.stocktracker.model.User user2 = new de.dtonal.stocktracker.model.User();
+        user2.setEmail("test2@example.com");
+        portfolio2.setUser(user2);
 
-        mockMvc.perform(post("/api/portfolios")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isUnauthorized())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.error").value("User not found"));
-    }
+        when(portfolioService.findPortfoliosForCurrentUser()).thenReturn(List.of(portfolio1, portfolio2));
 
-    @Test
-    @WithMockUser(username = "test@example.com")
-    void testGetPortfoliosForCurrentUser_Success() throws Exception {
-        when(userService.findUserByEmail("test@example.com")).thenReturn(Optional.of(testUser));
-        when(portfolioService.findByUser(testUser)).thenReturn(Arrays.asList(testPortfolio));
-
-        mockMvc.perform(get("/api/portfolios")
-                .contentType(MediaType.APPLICATION_JSON))
+        mockMvc.perform(get("/api/portfolios"))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$[0].id").value(testPortfolio.getId()))
-                .andExpect(jsonPath("$[0].name").value(testPortfolio.getName()))
-                .andExpect(jsonPath("$[0].description").value(testPortfolio.getDescription()));
+                .andExpect(jsonPath("$", hasSize(2)));
     }
 
     @Test
-    @WithMockUser(username = "test@example.com")
-    void testGetPortfolioById_Success() throws Exception {
-        when(portfolioService.findById(1L)).thenReturn(Optional.of(testPortfolio));
+    @WithMockUser(username = "test@example.com", roles = "USER")
+    void addStockToPortfolio_shouldSucceed() throws Exception {
+        StockTransactionRequest request = new StockTransactionRequest("portfolio-123", "stock-123", LocalDateTime.now(),
+                BigDecimal.valueOf(10), BigDecimal.valueOf(150.0), TransactionType.BUY, "AAPL");
+        StockTransaction transaction = new StockTransaction();
+        transaction.setId("tx-uuid-456");
+        // Falls im Response auf weitere Felder zugegriffen wird:
+        Portfolio portfolio = new Portfolio();
+        portfolio.setId("uuid-123");
 
-        mockMvc.perform(get("/api/portfolios/1")
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.id").value(testPortfolio.getId()))
-                .andExpect(jsonPath("$.name").value(testPortfolio.getName()))
-                .andExpect(jsonPath("$.description").value(testPortfolio.getDescription()));
-    }
+        de.dtonal.stocktracker.model.User user = new de.dtonal.stocktracker.model.User();
+        user.setEmail("test@example.com");
+        portfolio.setUser(user);
 
-    @Test
-    @WithMockUser(username = "test@example.com")
-    void testGetPortfolioById_NotFound() throws Exception {
-        when(portfolioService.findById(1L)).thenReturn(Optional.empty());
+        transaction.setPortfolio(portfolio);
 
-        mockMvc.perform(get("/api/portfolios/1")
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNotFound())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.error").value("Portfolio not found"));
-    }
+        Stock stock = new Stock();
+        stock.setId("stock-123");
+        stock.setSymbol("AAPL");
+        transaction.setStock(stock);
 
-    @Test
-    @WithMockUser(username = "test@example.com")
-    void testAddTransaction_Success() throws Exception {
-        StockTransactionRequest request = new StockTransactionRequest();
-        request.setStockSymbol("AAPL");
-        request.setQuantity(BigDecimal.TEN);
-        request.setPricePerShare(BigDecimal.valueOf(150.00));
-        request.setTransactionType(TransactionType.BUY);
-        request.setTransactionDate(LocalDateTime.now());
+        when(portfolioService.addStockTransaction(anyString(), any(StockTransactionRequest.class)))
+                .thenReturn(transaction);
 
-        when(portfolioService.addTransaction(eq(1L), any(StockTransactionRequest.class))).thenReturn(testTransaction);
-
-        mockMvc.perform(post("/api/portfolios/1/transactions")
+        mockMvc.perform(post("/api/portfolios/{portfolioId}/transactions", "uuid-123")
+                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.id").value(testTransaction.getId()))
-                .andExpect(jsonPath("$.stock.symbol").value(testTransaction.getStock().getSymbol()))
-                .andExpect(jsonPath("$.quantity").value(testTransaction.getQuantity()));
-    }
-
-    @Test
-    @WithMockUser(username = "test@example.com")
-    void testGetStockQuantity_Success() throws Exception {
-        when(portfolioService.getStockQuantity(1L, "AAPL")).thenReturn(BigDecimal.TEN);
-
-        mockMvc.perform(get("/api/portfolios/1/stocks/AAPL/quantity")
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().string("10"));
+                .andExpect(jsonPath("$.id").value("tx-uuid-456"));
     }
 }

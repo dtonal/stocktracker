@@ -16,10 +16,12 @@ import java.util.Map;
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
+    private static final String ERROR = "error";
+
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<Map<String, String>> handleResponseStatusException(ResponseStatusException ex) {
         Map<String, String> response = new HashMap<>();
-        response.put("error", ex.getReason());
+        response.put(ERROR, ex.getReason());
         return ResponseEntity.status(ex.getStatusCode())
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(response);
@@ -28,7 +30,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<Map<String, String>> handleBadCredentialsException(BadCredentialsException ex) {
         Map<String, String> response = new HashMap<>();
-        response.put("error", "Invalid credentials");
+        response.put(ERROR, "Invalid credentials");
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(response);
@@ -37,7 +39,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<Map<String, String>> handleAuthenticationException(AuthenticationException ex) {
         Map<String, String> response = new HashMap<>();
-        response.put("error", "Authentication failed");
+        response.put(ERROR, "Authentication failed");
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(response);
@@ -46,7 +48,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<Map<String, String>> handleAccessDeniedException(AccessDeniedException ex) {
         Map<String, String> response = new HashMap<>();
-        response.put("error", "Access denied");
+        response.put(ERROR, "Access denied");
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(response);
@@ -55,7 +57,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, String>> handleIllegalArgumentException(IllegalArgumentException ex) {
         Map<String, String> response = new HashMap<>();
-        response.put("error", ex.getMessage());
+        response.put(ERROR, ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(response);
@@ -64,9 +66,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, String>> handleGenericException(Exception ex) {
         Map<String, String> response = new HashMap<>();
-        response.put("error", "An unexpected error occurred");
+        response.put(ERROR, "An unexpected error occurred");
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(response);
     }
-} 
+}

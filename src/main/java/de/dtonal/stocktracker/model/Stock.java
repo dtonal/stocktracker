@@ -4,19 +4,24 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.Data;
 
 /**
- * Repräsentiert die grundlegenden, statischen Informationen eines Wertpapiers (z.B. einer Aktie).
- * Diese Daten müssen nicht für jeden Benutzer separat gespeichert werden, da sie global gültig sind.
+ * Repräsentiert die grundlegenden, statischen Informationen eines Wertpapiers
+ * (z.B. einer Aktie).
+ * Diese Daten müssen nicht für jeden Benutzer separat gespeichert werden, da
+ * sie global gültig sind.
  */
+@Data
 @Entity
-@Table(name = "stocks")
+@Table(name = "stocks", uniqueConstraints = @UniqueConstraint(columnNames = { "symbol", "exchange" }))
 public class Stock {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(length = 36, updatable = false, nullable = false)
+    private String id;
 
-    @Column(name = "symbol", nullable = false, unique = true)
+    @Column(name = "symbol", nullable = false)
     private String symbol;
 
     @Column(name = "name", nullable = false)
@@ -51,10 +56,6 @@ public class Stock {
         this.currency = currency;
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
-    }
-
-    public long getId() {
-        return id;
     }
 
     public String getSymbol() {
@@ -139,14 +140,16 @@ public class Stock {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
         Stock stock = (Stock) o;
-        return id == stock.id;
+        return id.equals(stock.id);
     }
 
     @Override
     public int hashCode() {
-        return (int) (id ^ (id >>> 32));
+        return id.hashCode();
     }
-} 
+}

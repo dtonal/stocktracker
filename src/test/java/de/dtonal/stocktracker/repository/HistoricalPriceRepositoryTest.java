@@ -33,7 +33,7 @@ public class HistoricalPriceRepositoryTest {
     @BeforeEach
     public void setUp() {
         entityManager.clear();
-        
+
         testStock = new Stock("AAPL", "Apple Inc.", "NASDAQ", "USD");
         stockRepository.save(testStock);
         entityManager.flush();
@@ -165,7 +165,8 @@ public class HistoricalPriceRepositoryTest {
 
         List<HistoricalPrice> found = historicalPriceRepository.findByClosingPriceGreaterThan(new BigDecimal("149.50"));
         assertThat(found).hasSize(2);
-        assertThat(found).extracting(HistoricalPrice::getClosingPrice).allMatch(price -> price.compareTo(new BigDecimal("149.50")) > 0);
+        assertThat(found).extracting(HistoricalPrice::getClosingPrice)
+                .allMatch(price -> price.compareTo(new BigDecimal("149.50")) > 0);
     }
 
     @Test
@@ -179,7 +180,8 @@ public class HistoricalPriceRepositoryTest {
 
         List<HistoricalPrice> found = historicalPriceRepository.findByClosingPriceLessThan(new BigDecimal("150.50"));
         assertThat(found).hasSize(2);
-        assertThat(found).extracting(HistoricalPrice::getClosingPrice).allMatch(price -> price.compareTo(new BigDecimal("150.50")) < 0);
+        assertThat(found).extracting(HistoricalPrice::getClosingPrice)
+                .allMatch(price -> price.compareTo(new BigDecimal("150.50")) < 0);
     }
 
     @Test
@@ -225,7 +227,7 @@ public class HistoricalPriceRepositoryTest {
         List<HistoricalPrice> all = historicalPriceRepository.findAll();
         assertThat(all).hasSize(2);
         assertThat(all).extracting(HistoricalPrice::getClosingPrice).containsExactlyInAnyOrder(
-            new BigDecimal("150.00"), new BigDecimal("149.00"));
+                new BigDecimal("150.00"), new BigDecimal("149.00"));
     }
 
     @Test
@@ -256,7 +258,7 @@ public class HistoricalPriceRepositoryTest {
         entityManager.clear();
 
         LocalDateTime originalUpdatedAt = price.getUpdatedAt();
-        
+
         price.setClosingPrice(new BigDecimal("155.00"));
         historicalPriceRepository.save(price);
         entityManager.flush();
@@ -275,7 +277,7 @@ public class HistoricalPriceRepositoryTest {
 
     @Test
     public void testFindByStockIdEmpty() {
-        List<HistoricalPrice> found = historicalPriceRepository.findByStockId(999L);
+        List<HistoricalPrice> found = historicalPriceRepository.findByStockId("999L");
         assertThat(found).isEmpty();
     }
 
@@ -285,7 +287,8 @@ public class HistoricalPriceRepositoryTest {
         LocalDate yesterday = today.minusDays(1);
         LocalDate tomorrow = today.plusDays(1);
 
-        List<HistoricalPrice> found = historicalPriceRepository.findByStockAndDateBetween(testStock, yesterday, tomorrow);
+        List<HistoricalPrice> found = historicalPriceRepository.findByStockAndDateBetween(testStock, yesterday,
+                tomorrow);
         assertThat(found).isEmpty();
     }
 
@@ -303,7 +306,8 @@ public class HistoricalPriceRepositoryTest {
 
     @Test
     public void testFindByClosingPriceGreaterThanEmpty() {
-        List<HistoricalPrice> found = historicalPriceRepository.findByClosingPriceGreaterThan(new BigDecimal("1000.00"));
+        List<HistoricalPrice> found = historicalPriceRepository
+                .findByClosingPriceGreaterThan(new BigDecimal("1000.00"));
         assertThat(found).isEmpty();
     }
 
@@ -317,7 +321,7 @@ public class HistoricalPriceRepositoryTest {
     public void testMultipleStocks() {
         Stock stock2 = new Stock("MSFT", "Microsoft Corporation", "NASDAQ", "USD");
         stockRepository.save(stock2);
-        
+
         HistoricalPrice price1 = new HistoricalPrice(testStock, LocalDate.now(), new BigDecimal("150.00"));
         HistoricalPrice price2 = new HistoricalPrice(stock2, LocalDate.now(), new BigDecimal("300.00"));
         historicalPriceRepository.saveAll(List.of(price1, price2));
@@ -332,4 +336,4 @@ public class HistoricalPriceRepositoryTest {
         assertThat(aaplPrices.get(0).getStock().getSymbol()).isEqualTo("AAPL");
         assertThat(msftPrices.get(0).getStock().getSymbol()).isEqualTo("MSFT");
     }
-} 
+}

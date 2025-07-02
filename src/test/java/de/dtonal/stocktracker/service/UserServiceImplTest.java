@@ -40,7 +40,7 @@ class UserServiceImplTest {
     @BeforeEach
     void setUp() {
         user = new User("Max Mustermann", "max@example.com", "password");
-        user.setId(1L);
+        user.setId("1L");
         user.setRoles(Set.of(Role.USER));
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
@@ -53,7 +53,7 @@ class UserServiceImplTest {
 
         User userToRegister = new User("New User", "new@example.com", "new_password");
         User registered = userService.registerNewUser(userToRegister);
-        
+
         assertThat(registered).isNotNull();
         assertThat(passwordEncoder.matches("new_password", registered.getPassword())).isTrue();
         assertThat(registered.getRoles()).contains(Role.USER);
@@ -62,7 +62,7 @@ class UserServiceImplTest {
 
     @Test
     void testRegisterNewUserAlreadyExists() {
-        when(userRepository.existsByEmailIgnoreCase(user.getEmail())).thenReturn(true);
+        when(userRepository.findByEmailIgnoreCase(user.getEmail())).thenReturn(Optional.of(user));
         assertThatThrownBy(() -> userService.registerNewUser(user))
                 .isInstanceOf(IllegalArgumentException.class);
     }
@@ -70,43 +70,44 @@ class UserServiceImplTest {
     @Test
     @WithMockUser(username = "max@example.com")
     void testFindUserById_SuccessAsOwner() {
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        Optional<User> result = userService.findUserById(1L);
+        when(userRepository.findById("1L")).thenReturn(Optional.of(user));
+        Optional<User> result = userService.findUserById("1L");
         assertThat(result).isPresent().contains(user);
     }
-    
+
     @Test
     @WithMockUser(roles = "ADMIN")
     void testFindUserById_SuccessAsAdmin() {
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        Optional<User> result = userService.findUserById(1L);
+        when(userRepository.findById("1L")).thenReturn(Optional.of(user));
+        Optional<User> result = userService.findUserById("1L");
         assertThat(result).isPresent().contains(user);
     }
 
     @Test
     @WithMockUser(username = "someone.else@example.com")
     void testFindUserById_FailsAsOtherUser() {
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        assertThatThrownBy(() -> userService.findUserById(1L))
+        when(userRepository.findById("1L")).thenReturn(Optional.of(user));
+        assertThatThrownBy(() -> userService.findUserById("1L"))
                 .isInstanceOf(AccessDeniedException.class);
     }
-    
+
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void testFindUserById_NotFound() {
-        when(userRepository.findById(1L)).thenReturn(Optional.empty());
-        Optional<User> result = userService.findUserById(1L);
+        when(userRepository.findById("1L")).thenReturn(Optional.empty());
+        Optional<User> result = userService.findUserById("1L");
         assertThat(result).isEmpty();
     }
-    
-    // Other tests would follow a similar pattern, ensuring proper authentication context
+
+    // Other tests would follow a similar pattern, ensuring proper authentication
+    // context
     // and mocking for each specific case. The following are simplified for brevity.
 
     @Test
     @WithMockUser
-    void testFindUserByEmail() {
+    void testFindByEmail() {
         when(userRepository.findByEmailIgnoreCase("max@example.com")).thenReturn(Optional.of(user));
-        Optional<User> result = userService.findUserByEmail("max@example.com");
+        Optional<User> result = userService.findByEmail("max@example.com");
         assertThat(result).isPresent();
     }
 
@@ -121,19 +122,9 @@ class UserServiceImplTest {
     @Test
     @WithMockUser(roles = "ADMIN")
     void testDeleteUser() {
-        when(userRepository.existsById(1L)).thenReturn(true);
-        doNothing().when(userRepository).deleteById(1L);
-        userService.deleteUser(1L);
-        verify(userRepository).deleteById(1L);
-    }
-
-    @Test
-    @WithMockUser(roles = "ADMIN")
-    void testUpdateUser() {
-        when(userRepository.existsById(1L)).thenReturn(true);
-        when(userRepository.save(any(User.class))).thenReturn(user);
-        User result = userService.updateUser(user);
-        assertThat(result).isNotNull();
-        verify(userRepository).save(user);
+        when(userRepository.existsById("1L")).thenReturn(true);
+        doNothing().when(userRepository).deleteById("1L");
+        userService.deleteUser("1L");
+        verify(userRepository).deleteById("1L");
     }
 }

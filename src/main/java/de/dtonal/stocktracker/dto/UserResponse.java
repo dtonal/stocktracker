@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 // Repräsentiert die Daten eines Benutzers, die an den Client gesendet werden
 public class UserResponse {
-    private long id;
+    private String id;
     private String name;
     private String email;
     private Set<Role> roles;

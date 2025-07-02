@@ -1,17 +1,24 @@
 package de.dtonal.stocktracker.dto;
 
-import de.dtonal.stocktracker.model.TransactionType;
-import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.PastOrPresent;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import de.dtonal.stocktracker.model.TransactionType;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PastOrPresent;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
+
+@NoArgsConstructor
+@AllArgsConstructor
 public class StockTransactionRequest {
 
-    @NotBlank(message = "Stock symbol cannot be blank.")
-    private String stockSymbol;
+    @NotNull
+    private String portfolioId;
+
+    @NotNull
+    private String stockId;
 
     @NotNull(message = "Transaction date cannot be null.")
     @PastOrPresent(message = "Transaction date cannot be in the future.")
@@ -27,6 +34,17 @@ public class StockTransactionRequest {
 
     @NotNull(message = "Transaction type cannot be null.")
     private TransactionType transactionType;
+
+    @NotNull
+    private String stockSymbol;
+
+    public String getStockId() {
+        return stockId;
+    }
+
+    public void setStockId(String stockId) {
+        this.stockId = stockId;
+    }
 
     public String getStockSymbol() {
         return stockSymbol;
@@ -67,4 +85,12 @@ public class StockTransactionRequest {
     public void setTransactionType(TransactionType transactionType) {
         this.transactionType = transactionType;
     }
-} 
+
+    public String getPortfolioId() {
+        return portfolioId;
+    }
+
+    public void setPortfolioId(String portfolioId) {
+        this.portfolioId = portfolioId;
+    }
+}

@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository;
 import de.dtonal.stocktracker.model.User;
 
 @Repository
-public interface UserRepository extends JpaRepository<User, Long> {
+public interface UserRepository extends JpaRepository<User, String> {
     Optional<User> findByEmailIgnoreCase(@Param("email") String email);
 
     boolean existsByEmailIgnoreCase(@Param("email") String email);

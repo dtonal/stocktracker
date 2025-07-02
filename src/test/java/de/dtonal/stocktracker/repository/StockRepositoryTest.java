@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import org.h2.jdbc.JdbcSQLIntegrityConstraintViolationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,16 +54,16 @@ public class StockRepositoryTest {
         entityManager.flush();
         entityManager.clear();
 
-        Optional<Stock> found = stockRepository.findBySymbol("MSFT");
-        assertThat(found).isPresent();
-        assertThat(found.get().getSymbol()).isEqualTo("MSFT");
-        assertThat(found.get().getName()).isEqualTo("Microsoft Corporation");
+        List<Stock> found = stockRepository.findBySymbol("MSFT");
+        assertThat(found).isNotEmpty();
+        assertThat(found.get(0).getSymbol()).isEqualTo("MSFT");
+        assertThat(found.get(0).getName()).isEqualTo("Microsoft Corporation");
     }
 
     @Test
     public void testFindBySymbolNotFound() {
-        Optional<Stock> found = stockRepository.findBySymbol("NONEXISTENT");
-        assertThat(found).isNotPresent();
+        List<Stock> found = stockRepository.findBySymbol("NONEXISTENT");
+        assertThat(found).isEmpty();
     }
 
     @Test
@@ -217,7 +218,7 @@ public class StockRepositoryTest {
         entityManager.clear();
 
         LocalDateTime originalUpdatedAt = stock.getUpdatedAt();
-        
+
         stock.setName("Apple Inc. Updated");
         stockRepository.save(stock);
         entityManager.flush();
@@ -229,15 +230,34 @@ public class StockRepositoryTest {
     }
 
     @Test
-    public void testCreateDuplicateSymbolThrowsDataIntegrityViolationException() {
+    public void testCreateDuplicateSymbolOnDifferentExchangesAreValid() {
         Stock stock1 = new Stock("AAPL", "Apple Inc.", "NASDAQ", "USD");
         stockRepository.save(stock1);
         entityManager.flush();
         entityManager.clear();
 
         Stock stock2 = new Stock("AAPL", "Apple Inc. Duplicate", "NYSE", "USD");
-        assertThatThrownBy(() -> stockRepository.save(stock2))
-            .isInstanceOf(DataIntegrityViolationException.class);
+        stockRepository.save(stock2);
+        entityManager.flush();
+        entityManager.clear();
+
+        List<Stock> found = stockRepository.findBySymbol("AAPL");
+        assertThat(found.size()).isEqualTo(2);
+    }
+
+    @Test
+    public void testCreateDuplicateSymbolAndExchangeThrowsDataIntegrityViolationException() {
+        Stock stock1 = new Stock("AAPL", "Apple Inc.", "NASDAQ", "USD");
+        stockRepository.save(stock1);
+        entityManager.flush();
+        entityManager.clear();
+
+        Stock stock2 = new Stock("AAPL", "Apple Inc. Duplicate", "NASDAQ", "USD");
+        assertThatThrownBy(() -> {
+            stockRepository.save(stock2);
+            entityManager.flush();
+        })
+                .hasRootCauseInstanceOf(JdbcSQLIntegrityConstraintViolationException.class);
     }
 
     @Test
@@ -263,4 +283,4 @@ public class StockRepositoryTest {
         List<Stock> stocks = stockRepository.findByExchangeAndCurrency("NONEXISTENT", "NONEXISTENT");
         assertThat(stocks).isEmpty();
     }
-} 
+}

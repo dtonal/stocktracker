@@ -29,23 +29,23 @@ public class UserServiceImplSecuredTest {
     void findUserById_whenUserIsNotAdminOrSelf_thenThrowsAccessDenied() {
         // Erstellen Sie einen User, der nicht dem MockUser entspricht
         User foundUser = new User("Test User", "test@example.com", "pw");
-        when(userRepository.findById(1L)).thenReturn(Optional.of(foundUser));
+        when(userRepository.findById("1L")).thenReturn(Optional.of(foundUser));
 
         // Erwarten, dass die Sicherheitsregel eine Exception auslöst
         assertThrows(AccessDeniedException.class, () -> {
-            userService.findUserById(1L);
+            userService.findUserById("1L");
         });
     }
-    
+
     @Test
     @WithMockUser(username = "test@example.com")
     void findUserById_whenUserIsSelf_thenAccessIsGranted() {
         User foundUser = new User("Test User", "test@example.com", "pw");
-        when(userRepository.findById(1L)).thenReturn(Optional.of(foundUser));
+        when(userRepository.findById("1L")).thenReturn(Optional.of(foundUser));
 
         // Erwarten, dass KEINE Exception ausgelöst wird
         assertDoesNotThrow(() -> {
-            userService.findUserById(1L);
+            userService.findUserById("1L");
         });
     }
 
@@ -53,10 +53,10 @@ public class UserServiceImplSecuredTest {
     @WithMockUser(roles = "ADMIN")
     void findUserById_whenUserIsAdmin_thenAccessIsGranted() {
         User foundUser = new User("Test User", "test@example.com", "pw");
-        when(userRepository.findById(1L)).thenReturn(Optional.of(foundUser));
+        when(userRepository.findById("1L")).thenReturn(Optional.of(foundUser));
 
         assertDoesNotThrow(() -> {
-            userService.findUserById(1L);
+            userService.findUserById("1L");
         });
     }
 }
