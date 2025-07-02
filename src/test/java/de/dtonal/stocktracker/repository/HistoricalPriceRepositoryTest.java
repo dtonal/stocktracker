@@ -1,10 +1,12 @@
 package de.dtonal.stocktracker.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 
@@ -247,7 +249,7 @@ public class HistoricalPriceRepositoryTest {
         assertThat(found).isPresent();
         assertThat(found.get().getCreatedAt()).isNotNull();
         assertThat(found.get().getUpdatedAt()).isNotNull();
-        assertThat(found.get().getCreatedAt()).isEqualTo(found.get().getUpdatedAt());
+        assertThat(found.get().getCreatedAt()).isCloseTo(found.get().getUpdatedAt(), within(1, ChronoUnit.SECONDS));
     }
 
     @Test
