@@ -5,8 +5,10 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +17,7 @@ import org.springframework.web.server.ResponseStatusException;
 import de.dtonal.stocktracker.dto.PortfolioCreateRequest;
 import de.dtonal.stocktracker.dto.StockTransactionRequest;
 import de.dtonal.stocktracker.model.Portfolio;
+import de.dtonal.stocktracker.model.PortfolioNotFoundException;
 import de.dtonal.stocktracker.model.Stock;
 import de.dtonal.stocktracker.model.StockTransaction;
 import de.dtonal.stocktracker.model.TransactionType;
@@ -55,9 +58,24 @@ public class PortfolioServiceImpl implements PortfolioService {
     }
 
     @Override
-    @PostAuthorize("hasRole('ADMIN') or (returnObject.isPresent() and returnObject.get().user.email == principal.username)")
     public Optional<Portfolio> findById(String id) {
-        return portfolioRepository.findById(id);
+        Optional<Portfolio> portfolioOpt = portfolioRepository.findById(id);
+        if (portfolioOpt.isEmpty()) {
+            return Optional.empty();
+        }
+
+        Portfolio portfolio = portfolioOpt.get();
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String currentUsername = authentication.getName();
+
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(r -> r.getAuthority().equals("ROLE_ADMIN"));
+
+        if (portfolio.getUser().getEmail().equals(currentUsername) || isAdmin) {
+            return portfolioOpt;
+        } else {
+            return Optional.empty();
+        }
     }
 
     @Override
@@ -119,5 +137,24 @@ public class PortfolioServiceImpl implements PortfolioService {
         }
 
         return totalValue;
+    }
+
+    @Override
+    @Transactional
+    public void deletePortfolio(String portfolioId) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmailIgnoreCase(username)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found for token"));
+
+        Portfolio portfolio = portfolioRepository.findById(portfolioId)
+                .orElseThrow(() -> new PortfolioNotFoundException("Portfolio with ID " + portfolioId + " not found."));
+
+        boolean isAdmin = user.getRoles().stream().anyMatch(role -> role.name().equals("ROLE_ADMIN"));
+
+        if (!portfolio.getUser().equals(user) && !isAdmin) {
+            throw new AccessDeniedException("You are not authorized to delete this portfolio.");
+        }
+
+        portfolioRepository.delete(portfolio);
     }
 }

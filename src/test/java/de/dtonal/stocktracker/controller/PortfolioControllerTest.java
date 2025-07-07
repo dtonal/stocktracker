@@ -21,6 +21,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.access.AccessDeniedException;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -29,12 +30,17 @@ import java.util.List;
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+
+import de.dtonal.stocktracker.model.PortfolioNotFoundException;
 
 @WebMvcTest(PortfolioController.class)
 @Import({ ApplicationConfig.class, SecurityConfig.class })
@@ -134,5 +140,39 @@ class PortfolioControllerTest {
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value("tx-uuid-456"));
+    }
+
+    @Test
+    @WithMockUser(username = "test@example.com", roles = "USER")
+    void deletePortfolio_shouldSucceed() throws Exception {
+        doNothing().when(portfolioService).deletePortfolio("portfolio-123");
+
+        mockMvc.perform(delete("/api/portfolios/{id}", "portfolio-123")
+                .with(csrf()))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    @WithMockUser(username = "test@example.com", roles = "USER")
+    void deletePortfolio_whenNotFound_shouldReturn404() throws Exception {
+        doThrow(new PortfolioNotFoundException("Portfolio not found"))
+                .when(portfolioService).deletePortfolio("non-existent-id");
+
+        mockMvc.perform(delete("/api/portfolios/{id}", "non-existent-id")
+                .with(csrf()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error").value("Portfolio not found"));
+    }
+
+    @Test
+    @WithMockUser(username = "test@example.com", roles = "USER")
+    void deletePortfolio_whenAccessDenied_shouldReturn403() throws Exception {
+        doThrow(new AccessDeniedException("Access denied"))
+                .when(portfolioService).deletePortfolio("other-user-portfolio-id");
+
+        mockMvc.perform(delete("/api/portfolios/{id}", "other-user-portfolio-id")
+                .with(csrf()))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error").value("Access denied"));
     }
 }

@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -57,6 +58,12 @@ public class PortfolioController {
                         .body(new PortfolioResponse(portfolio)))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "Portfolio not found"));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletePortfolio(@PathVariable String id) {
+        portfolioService.deletePortfolio(id);
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping(value = "/{portfolioId}/transactions", produces = MediaType.APPLICATION_JSON_VALUE)

@@ -110,7 +110,7 @@ public class CrossUserSecurityIntegrationTest {
         // Step 2: User A tries to access User B's portfolio
         mockMvc.perform(get("/api/portfolios/" + portfolioOfUserB.getId())
                 .header("Authorization", "Bearer " + tokenOfUserA))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isNotFound());
     }
 
     @Test

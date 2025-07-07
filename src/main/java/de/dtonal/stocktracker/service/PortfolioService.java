@@ -21,4 +21,6 @@ public interface PortfolioService {
     BigDecimal getStockQuantity(String portfolioId, String stockSymbol);
     
     BigDecimal getTotalPortfolioValue(String portfolioId);
+
+    void deletePortfolio(String portfolioId);
 }

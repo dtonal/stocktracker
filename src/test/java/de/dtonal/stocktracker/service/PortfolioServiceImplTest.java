@@ -3,6 +3,8 @@ package de.dtonal.stocktracker.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -23,6 +25,7 @@ import org.springframework.security.test.context.support.WithMockUser;
 import de.dtonal.stocktracker.dto.PortfolioCreateRequest;
 import de.dtonal.stocktracker.dto.StockTransactionRequest;
 import de.dtonal.stocktracker.model.Portfolio;
+import de.dtonal.stocktracker.model.PortfolioNotFoundException;
 import de.dtonal.stocktracker.model.Stock;
 import de.dtonal.stocktracker.model.StockTransaction;
 import de.dtonal.stocktracker.model.TransactionType;
@@ -96,8 +99,10 @@ class PortfolioServiceImplTest {
     @WithMockUser(username = "another@user.com")
     void findById_shouldFail_whenUserIsNotOwner() {
         when(portfolioRepository.findById("portfolio-id-456")).thenReturn(Optional.of(portfolio));
-        assertThatThrownBy(() -> portfolioService.findById("portfolio-id-456"))
-                .isInstanceOf(AccessDeniedException.class);
+        
+        Optional<Portfolio> result = portfolioService.findById("portfolio-id-456");
+
+        assertThat(result).isNotPresent();
     }
 
     @Test
@@ -164,5 +169,44 @@ class PortfolioServiceImplTest {
 
         BigDecimal quantity = portfolioService.getStockQuantity("stock-id-789", "AAPL");
         assertThat(quantity).isEqualByComparingTo("7");
+    }
+
+    @Test
+    @WithMockUser(username = "test@example.com", roles = {"USER"})
+    void deletePortfolio_shouldSucceed_whenUserIsOwner() {
+        when(userRepository.findByEmailIgnoreCase("test@example.com")).thenReturn(Optional.of(user));
+        when(portfolioRepository.findById("portfolio-id-456")).thenReturn(Optional.of(portfolio));
+        doNothing().when(portfolioRepository).delete(portfolio);
+
+        portfolioService.deletePortfolio("portfolio-id-456");
+
+        verify(portfolioRepository).delete(portfolio);
+    }
+
+    @Test
+    @WithMockUser(username = "test@example.com")
+    void deletePortfolio_shouldThrowPortfolioNotFoundException_whenPortfolioDoesNotExist() {
+        when(userRepository.findByEmailIgnoreCase("test@example.com")).thenReturn(Optional.of(user));
+        when(portfolioRepository.findById("non-existent-id")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> portfolioService.deletePortfolio("non-existent-id"))
+                .isInstanceOf(PortfolioNotFoundException.class)
+                .hasMessage("Portfolio with ID non-existent-id not found.");
+
+        verify(portfolioRepository, never()).delete(any());
+    }
+
+    @Test
+    @WithMockUser(username = "another@user.com")
+    void deletePortfolio_shouldThrowAccessDeniedException_whenUserIsNotOwner() {
+        User anotherUser = new User("Jane Doe", "another@user.com", "password");
+        when(userRepository.findByEmailIgnoreCase("another@user.com")).thenReturn(Optional.of(anotherUser));
+        when(portfolioRepository.findById("portfolio-id-456")).thenReturn(Optional.of(portfolio));
+
+        assertThatThrownBy(() -> portfolioService.deletePortfolio("portfolio-id-456"))
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessage("You are not authorized to delete this portfolio.");
+
+        verify(portfolioRepository, never()).delete(any());
     }
 }
