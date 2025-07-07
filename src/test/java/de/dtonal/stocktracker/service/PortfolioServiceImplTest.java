@@ -261,4 +261,40 @@ class PortfolioServiceImplTest {
         assertThatThrownBy(() -> portfolioService.updatePortfolio("non-existent-id", updateRequest))
                 .isInstanceOf(PortfolioNotFoundException.class);
     }
+
+    @Test
+    @WithMockUser(username = "test@example.com")
+    void deleteStockTransaction_shouldSucceed() {
+        // Arrange
+        StockTransaction transaction1 = new StockTransaction(stock, portfolio, LocalDateTime.now(), BigDecimal.TEN, BigDecimal.ONE, TransactionType.BUY);
+        transaction1.setId("tx-1");
+        StockTransaction transaction2 = new StockTransaction(stock, portfolio, LocalDateTime.now(), BigDecimal.TEN, BigDecimal.ONE, TransactionType.BUY);
+        transaction2.setId("tx-2");
+        portfolio.getTransactions().addAll(List.of(transaction1, transaction2));
+
+        when(portfolioRepository.findById("portfolio-id-456")).thenReturn(Optional.of(portfolio));
+        when(stockTransactionRepository.findById("tx-1")).thenReturn(Optional.of(transaction1));
+        when(portfolioRepository.save(any(Portfolio.class))).thenReturn(portfolio);
+
+        // Act
+        portfolioService.deleteStockTransaction("portfolio-id-456", "tx-1");
+
+        // Assert
+        assertThat(portfolio.getTransactions()).hasSize(1);
+        assertThat(portfolio.getTransactions().get(0).getId()).isEqualTo("tx-2");
+        verify(portfolioRepository).save(portfolio);
+    }
+
+    @Test
+    @WithMockUser(username = "test@example.com")
+    void deleteStockTransaction_shouldThrow_whenTransactionNotFound() {
+        // Arrange
+        when(portfolioRepository.findById("portfolio-id-456")).thenReturn(Optional.of(portfolio));
+        when(stockTransactionRepository.findById("non-existent-tx-id")).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThatThrownBy(() -> portfolioService.deleteStockTransaction("portfolio-id-456", "non-existent-tx-id"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Transaction with ID non-existent-tx-id not found.");
+    }
 }

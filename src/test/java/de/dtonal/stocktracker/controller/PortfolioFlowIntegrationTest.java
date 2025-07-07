@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.hamcrest.Matchers.hasSize;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -223,5 +224,55 @@ public class PortfolioFlowIntegrationTest {
                 .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Updated Name"));
+    }
+
+    @Test
+    void testTransactionDeleteFlow() throws Exception {
+        // Step 1: Authenticate and get JWT
+        String token = authenticateAndGetToken();
+
+        // Step 2: Create a portfolio
+        PortfolioCreateRequest createRequest = new PortfolioCreateRequest("Portfolio With Txs", "To test tx deletion");
+        MvcResult createPortfolioResult = mockMvc.perform(post("/api/portfolios")
+                .header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(createRequest)))
+                .andExpect(status().isCreated())
+                .andReturn();
+        String portfolioId = JsonPath.read(createPortfolioResult.getResponse().getContentAsString(), "$.id");
+
+        // Step 3: Add two transactions
+        StockTransactionRequest txRequest1 = new StockTransactionRequest(portfolioId, testStock.getId(), LocalDateTime.now(), new BigDecimal("10"), new BigDecimal("100"), TransactionType.BUY, testStock.getSymbol());
+        MvcResult txResult1 = mockMvc.perform(post("/api/portfolios/" + portfolioId + "/transactions")
+                .header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(txRequest1)))
+                .andExpect(status().isCreated())
+                .andReturn();
+        String txId1 = JsonPath.read(txResult1.getResponse().getContentAsString(), "$.id");
+
+        StockTransactionRequest txRequest2 = new StockTransactionRequest(portfolioId, testStock.getId(), LocalDateTime.now(), new BigDecimal("5"), new BigDecimal("110"), TransactionType.BUY, testStock.getSymbol());
+        mockMvc.perform(post("/api/portfolios/" + portfolioId + "/transactions")
+                .header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(txRequest2)))
+                .andExpect(status().isCreated());
+
+        // Step 4: Verify there are two transactions
+        mockMvc.perform(get("/api/portfolios/" + portfolioId)
+                .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.transactions", hasSize(2)));
+
+        // Step 5: Delete the first transaction
+        mockMvc.perform(delete("/api/portfolios/{portfolioId}/transactions/{transactionId}", portfolioId, txId1)
+                .header("Authorization", "Bearer " + token))
+                .andExpect(status().isNoContent());
+
+        // Step 6: Verify there is only one transaction left
+        mockMvc.perform(get("/api/portfolios/" + portfolioId)
+                .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.transactions", hasSize(1)));
     }
 } 

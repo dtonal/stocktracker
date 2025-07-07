@@ -74,6 +74,12 @@ public class PortfolioController {
         return ResponseEntity.noContent().build();
     }
 
+    @DeleteMapping("/{portfolioId}/transactions/{transactionId}")
+    public ResponseEntity<Void> deleteStockTransaction(@PathVariable String portfolioId, @PathVariable String transactionId) {
+        portfolioService.deleteStockTransaction(portfolioId, transactionId);
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping(value = "/{portfolioId}/transactions", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<StockTransactionResponse> addTransaction(
             @PathVariable String portfolioId,

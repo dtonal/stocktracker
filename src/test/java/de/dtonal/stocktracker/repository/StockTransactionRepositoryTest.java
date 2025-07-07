@@ -104,7 +104,7 @@ public class StockTransactionRepositoryTest {
         assertThat(found.get().getStock().getSymbol()).isEqualTo("AAPL");
         assertThat(found.get().getPortfolio().getName()).isEqualTo("Test Portfolio");
         assertBigDecimalEquals(found.get().getQuantity(), "10.5");
-        assertThat(found.get().getPricePerShare()).isEqualTo(bd("150.00"));
+        assertBigDecimalEquals(found.get().getPricePerShare(), "150.00");
         assertThat(found.get().getTransactionType()).isEqualTo(TransactionType.BUY);
         assertThat(found.get().getCreatedAt()).isNotNull();
         assertThat(found.get().getUpdatedAt()).isNotNull();
@@ -248,7 +248,7 @@ public class StockTransactionRepositoryTest {
         Optional<StockTransaction> found = stockTransactionRepository.findById(transaction.getId());
         assertThat(found).isPresent();
         assertBigDecimalEquals(found.get().getQuantity(), "15.75");
-        assertThat(found.get().getPricePerShare()).isEqualTo(bd("155.00"));
+        assertBigDecimalEquals(found.get().getPricePerShare(), "155.00");
         assertThat(found.get().getUpdatedAt()).isAfter(found.get().getCreatedAt());
     }
 

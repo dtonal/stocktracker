@@ -27,6 +27,7 @@ import de.dtonal.stocktracker.repository.PortfolioRepository;
 import de.dtonal.stocktracker.repository.StockRepository;
 import de.dtonal.stocktracker.repository.StockTransactionRepository;
 import de.dtonal.stocktracker.repository.UserRepository;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -100,9 +101,10 @@ public class PortfolioServiceImpl implements PortfolioService {
         
         portfolio.addTransaction(transaction);
         
-        portfolioRepository.save(portfolio);
+        Portfolio savedPortfolio = portfolioRepository.save(portfolio);
 
-        return transaction;
+        // Return the managed instance from the saved portfolio, which has the generated ID.
+        return savedPortfolio.getTransactions().get(savedPortfolio.getTransactions().size() - 1);
     }
 
     @Override
@@ -169,5 +171,26 @@ public class PortfolioServiceImpl implements PortfolioService {
         portfolio.setDescription(updateRequest.getDescription());
 
         return portfolioRepository.save(portfolio);
+    }
+
+    @Override
+    @Transactional
+    public void deleteStockTransaction(String portfolioId, String transactionId) {
+        Portfolio portfolio = this.findById(portfolioId)
+                .orElseThrow(() -> new PortfolioNotFoundException("Portfolio with ID " + portfolioId + " not found."));
+
+        StockTransaction transactionToRemove = this.stockTransactionRepository.findById(transactionId)
+                .orElseThrow(() -> new IllegalArgumentException("Transaction with ID " + transactionId + " not found."));
+
+        if (!transactionToRemove.getPortfolio().getId().equals(portfolio.getId())) {
+            // This case should ideally not happen if IDs are unique, but it's a good safeguard.
+            throw new IllegalArgumentException("Transaction with ID " + transactionId + " does not belong to portfolio with ID " + portfolioId);
+        }
+
+        // Step 4: Remove the transaction from the portfolio's collection.
+        // Because of `orphanRemoval=true` on the @OneToMany relationship,
+        // JPA will automatically delete the transaction from the database when the parent is saved/flushed.
+        portfolio.removeTransaction(transactionToRemove);
+        portfolioRepository.save(portfolio);
     }
 }

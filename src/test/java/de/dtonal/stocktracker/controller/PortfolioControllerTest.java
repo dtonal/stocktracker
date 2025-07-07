@@ -217,4 +217,25 @@ class PortfolioControllerTest {
                 .content(objectMapper.writeValueAsString(updateRequest)))
                 .andExpect(status().isNotFound());
     }
+
+    @Test
+    @WithMockUser(username = "test@example.com", roles = "USER")
+    void deleteStockTransaction_shouldSucceed() throws Exception {
+        doNothing().when(portfolioService).deleteStockTransaction("portfolio-123", "tx-456");
+
+        mockMvc.perform(delete("/api/portfolios/{portfolioId}/transactions/{transactionId}", "portfolio-123", "tx-456")
+                .with(csrf()))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    @WithMockUser(username = "test@example.com", roles = "USER")
+    void deleteStockTransaction_whenPortfolioNotFound_shouldReturn404() throws Exception {
+        doThrow(new PortfolioNotFoundException("Portfolio not found"))
+                .when(portfolioService).deleteStockTransaction("non-existent-portfolio", "tx-456");
+
+        mockMvc.perform(delete("/api/portfolios/{portfolioId}/transactions/{transactionId}", "non-existent-portfolio", "tx-456")
+                .with(csrf()))
+                .andExpect(status().isNotFound());
+    }
 }

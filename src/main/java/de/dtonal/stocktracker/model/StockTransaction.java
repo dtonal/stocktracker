@@ -2,6 +2,7 @@ package de.dtonal.stocktracker.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.AllArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -14,6 +15,7 @@ import java.time.LocalDateTime;
 @Data
 @Entity
 @Table(name = "stock_transaction")
+@AllArgsConstructor
 public class StockTransaction {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -31,10 +33,10 @@ public class StockTransaction {
     @Column(name = "transaction_date", nullable = false)
     private LocalDateTime transactionDate;
 
-    @Column(name = "quantity", nullable = false, precision = 15, scale = 6)
+    @Column(name = "quantity", nullable = false, precision = 15, scale = 5)
     private BigDecimal quantity;
 
-    @Column(name = "price_per_share", nullable = false, precision = 10, scale = 2)
+    @Column(name = "price_per_share", nullable = false, precision = 19, scale = 4)
     private BigDecimal pricePerShare;
 
     @Enumerated(EnumType.STRING)
@@ -161,11 +163,11 @@ public class StockTransaction {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         StockTransaction that = (StockTransaction) o;
-        return id.equals(that.id);
+        return id != null && id.equals(that.id);
     }
 
     @Override
     public int hashCode() {
-        return id.hashCode();
+        return id != null ? id.hashCode() : getClass().hashCode();
     }
 } 
