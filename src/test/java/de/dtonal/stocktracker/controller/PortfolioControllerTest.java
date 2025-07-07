@@ -36,11 +36,13 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 
 import de.dtonal.stocktracker.model.PortfolioNotFoundException;
+import de.dtonal.stocktracker.dto.PortfolioUpdateRequest;
 
 @WebMvcTest(PortfolioController.class)
 @Import({ ApplicationConfig.class, SecurityConfig.class })
@@ -174,5 +176,45 @@ class PortfolioControllerTest {
                 .with(csrf()))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.error").value("Access denied"));
+    }
+
+    @Test
+    @WithMockUser(username = "test@example.com", roles = "USER")
+    void updatePortfolio_shouldSucceed() throws Exception {
+        PortfolioUpdateRequest updateRequest = new PortfolioUpdateRequest();
+        updateRequest.setName("Updated Name");
+        updateRequest.setDescription("Updated Description");
+
+        Portfolio updatedPortfolio = new Portfolio();
+        updatedPortfolio.setId("portfolio-123");
+        updatedPortfolio.setName("Updated Name");
+        de.dtonal.stocktracker.model.User user = new de.dtonal.stocktracker.model.User();
+        user.setEmail("test@example.com");
+        updatedPortfolio.setUser(user);
+
+        when(portfolioService.updatePortfolio(anyString(), any(PortfolioUpdateRequest.class))).thenReturn(updatedPortfolio);
+
+        mockMvc.perform(put("/api/portfolios/{id}", "portfolio-123")
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(updateRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Updated Name"));
+    }
+
+    @Test
+    @WithMockUser(username = "test@example.com", roles = "USER")
+    void updatePortfolio_whenNotFound_shouldReturn404() throws Exception {
+        PortfolioUpdateRequest updateRequest = new PortfolioUpdateRequest();
+        updateRequest.setName("Updated Name");
+
+        when(portfolioService.updatePortfolio(anyString(), any(PortfolioUpdateRequest.class)))
+                .thenThrow(new PortfolioNotFoundException("Portfolio not found"));
+
+        mockMvc.perform(put("/api/portfolios/{id}", "non-existent-id")
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(updateRequest)))
+                .andExpect(status().isNotFound());
     }
 }

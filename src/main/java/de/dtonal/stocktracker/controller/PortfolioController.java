@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -18,6 +19,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import de.dtonal.stocktracker.dto.PortfolioCreateRequest;
 import de.dtonal.stocktracker.dto.PortfolioResponse;
+import de.dtonal.stocktracker.dto.PortfolioUpdateRequest;
 import de.dtonal.stocktracker.dto.StockTransactionRequest;
 import de.dtonal.stocktracker.dto.StockTransactionResponse;
 import de.dtonal.stocktracker.model.Portfolio;
@@ -58,6 +60,12 @@ public class PortfolioController {
                         .body(new PortfolioResponse(portfolio)))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "Portfolio not found"));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<PortfolioResponse> updatePortfolio(@PathVariable String id, @Valid @RequestBody PortfolioUpdateRequest request) {
+        Portfolio updatedPortfolio = portfolioService.updatePortfolio(id, request);
+        return ResponseEntity.ok(new PortfolioResponse(updatedPortfolio));
     }
 
     @DeleteMapping("/{id}")

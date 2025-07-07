@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import de.dtonal.stocktracker.dto.PortfolioCreateRequest;
+import de.dtonal.stocktracker.dto.PortfolioUpdateRequest;
 import de.dtonal.stocktracker.dto.StockTransactionRequest;
 import de.dtonal.stocktracker.model.Portfolio;
 import de.dtonal.stocktracker.model.PortfolioNotFoundException;
@@ -156,5 +157,17 @@ public class PortfolioServiceImpl implements PortfolioService {
         }
 
         portfolioRepository.delete(portfolio);
+    }
+
+    @Override
+    @Transactional
+    public Portfolio updatePortfolio(String portfolioId, PortfolioUpdateRequest updateRequest) {
+        Portfolio portfolio = findById(portfolioId)
+                .orElseThrow(() -> new PortfolioNotFoundException("Portfolio with ID " + portfolioId + " not found."));
+
+        portfolio.setName(updateRequest.getName());
+        portfolio.setDescription(updateRequest.getDescription());
+
+        return portfolioRepository.save(portfolio);
     }
 }

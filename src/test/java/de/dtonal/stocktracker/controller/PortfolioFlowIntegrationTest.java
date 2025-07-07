@@ -3,6 +3,7 @@ package de.dtonal.stocktracker.controller;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -25,6 +26,7 @@ import com.jayway.jsonpath.JsonPath;
 
 import de.dtonal.stocktracker.dto.AuthenticationRequest;
 import de.dtonal.stocktracker.dto.PortfolioCreateRequest;
+import de.dtonal.stocktracker.dto.PortfolioUpdateRequest;
 import de.dtonal.stocktracker.dto.StockTransactionRequest;
 import de.dtonal.stocktracker.model.Stock;
 import de.dtonal.stocktracker.model.TransactionType;
@@ -187,5 +189,39 @@ public class PortfolioFlowIntegrationTest {
         mockMvc.perform(delete("/api/portfolios/{id}", portfolioId)
                 .header("Authorization", "Bearer " + attackerToken))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void testFullPortfolioUpdateFlow() throws Exception {
+        // Step 1: Authenticate and get JWT
+        String token = authenticateAndGetToken();
+
+        // Step 2: Create a new portfolio
+        PortfolioCreateRequest createRequest = new PortfolioCreateRequest("Original Name", "Original Desc");
+        MvcResult createResult = mockMvc.perform(post("/api/portfolios")
+                .header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(createRequest)))
+                .andExpect(status().isCreated())
+                .andReturn();
+        String portfolioId = JsonPath.read(createResult.getResponse().getContentAsString(), "$.id");
+
+        // Step 3: Update the portfolio
+        PortfolioUpdateRequest updateRequest = new PortfolioUpdateRequest();
+        updateRequest.setName("Updated Name");
+        updateRequest.setDescription("Updated Desc");
+        mockMvc.perform(put("/api/portfolios/{id}", portfolioId)
+                .header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(updateRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Updated Name"))
+                .andExpect(jsonPath("$.description").value("Updated Desc"));
+
+        // Step 4: Verify the update by fetching the portfolio again
+        mockMvc.perform(get("/api/portfolios/{id}", portfolioId)
+                .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Updated Name"));
     }
 } 

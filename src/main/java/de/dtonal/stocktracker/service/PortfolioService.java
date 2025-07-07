@@ -1,6 +1,7 @@
 package de.dtonal.stocktracker.service;
 
 import de.dtonal.stocktracker.dto.PortfolioCreateRequest;
+import de.dtonal.stocktracker.dto.PortfolioUpdateRequest;
 import de.dtonal.stocktracker.dto.StockTransactionRequest;
 import de.dtonal.stocktracker.model.Portfolio;
 import de.dtonal.stocktracker.model.StockTransaction;
@@ -11,6 +12,8 @@ import java.util.Optional;
 public interface PortfolioService {
 
     Portfolio createPortfolio(PortfolioCreateRequest createRequest);
+
+    Portfolio updatePortfolio(String portfolioId, PortfolioUpdateRequest updateRequest);
 
     List<Portfolio> findPortfoliosForCurrentUser();
 

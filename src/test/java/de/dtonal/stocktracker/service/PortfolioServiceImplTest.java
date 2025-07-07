@@ -23,6 +23,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.test.context.support.WithMockUser;
 
 import de.dtonal.stocktracker.dto.PortfolioCreateRequest;
+import de.dtonal.stocktracker.dto.PortfolioUpdateRequest;
 import de.dtonal.stocktracker.dto.StockTransactionRequest;
 import de.dtonal.stocktracker.model.Portfolio;
 import de.dtonal.stocktracker.model.PortfolioNotFoundException;
@@ -208,5 +209,56 @@ class PortfolioServiceImplTest {
                 .hasMessage("You are not authorized to delete this portfolio.");
 
         verify(portfolioRepository, never()).delete(any());
+    }
+
+    @Test
+    @WithMockUser(username = "test@example.com")
+    void updatePortfolio_shouldSucceed_whenUserIsOwner() {
+        // Arrange
+        PortfolioUpdateRequest updateRequest = new PortfolioUpdateRequest();
+        updateRequest.setName("Updated Portfolio Name");
+        updateRequest.setDescription("Updated Description");
+
+        // Mock the findById to return the portfolio, simulating the user is the owner
+        when(portfolioService.findById("portfolio-id-456")).thenReturn(Optional.of(portfolio));
+        when(portfolioRepository.save(any(Portfolio.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Act
+        Portfolio updatedPortfolio = portfolioService.updatePortfolio("portfolio-id-456", updateRequest);
+
+        // Assert
+        assertThat(updatedPortfolio.getName()).isEqualTo("Updated Portfolio Name");
+        assertThat(updatedPortfolio.getDescription()).isEqualTo("Updated Description");
+        verify(portfolioRepository).save(portfolio);
+    }
+
+    @Test
+    @WithMockUser(username = "another@user.com")
+    void updatePortfolio_shouldThrowNotFound_whenUserIsNotOwner() {
+        // Arrange
+        PortfolioUpdateRequest updateRequest = new PortfolioUpdateRequest();
+        updateRequest.setName("Malicious Update");
+
+        // Mock the findById to return empty, simulating a failed security check
+        when(portfolioService.findById("portfolio-id-456")).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThatThrownBy(() -> portfolioService.updatePortfolio("portfolio-id-456", updateRequest))
+                .isInstanceOf(PortfolioNotFoundException.class);
+        verify(portfolioRepository, never()).save(any(Portfolio.class));
+    }
+
+    @Test
+    @WithMockUser(username = "test@example.com")
+    void updatePortfolio_shouldThrowNotFound_whenPortfolioDoesNotExist() {
+        // Arrange
+        PortfolioUpdateRequest updateRequest = new PortfolioUpdateRequest();
+        updateRequest.setName("Update for Non-Existent");
+
+        when(portfolioService.findById("non-existent-id")).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThatThrownBy(() -> portfolioService.updatePortfolio("non-existent-id", updateRequest))
+                .isInstanceOf(PortfolioNotFoundException.class);
     }
 }
