@@ -1,10 +1,12 @@
 package de.dtonal.stocktracker.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import de.dtonal.stocktracker.dto.AuthenticationRequest;
-import de.dtonal.stocktracker.dto.AuthenticationResponse;
-import de.dtonal.stocktracker.dto.UserRegistrationRequest;
-import de.dtonal.stocktracker.dto.UserResponse;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -14,15 +16,17 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.assertj.core.api.Assertions.assertThat;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import de.dtonal.stocktracker.dto.AuthenticationRequest;
+import de.dtonal.stocktracker.dto.AuthenticationResponse;
+import de.dtonal.stocktracker.dto.UserRegistrationRequest;
+import de.dtonal.stocktracker.dto.UserResponse;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
+@Tag("integration")
 public class AuthIntegrationTest {
 
         @Autowired

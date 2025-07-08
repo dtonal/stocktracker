@@ -12,6 +12,7 @@ import java.util.Optional;
 import org.h2.jdbc.JdbcSQLIntegrityConstraintViolationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
@@ -19,6 +20,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import de.dtonal.stocktracker.model.Stock;
 
 @DataJpaTest
+@Tag("integration")
 public class StockRepositoryTest {
     @Autowired
     private StockRepository stockRepository;

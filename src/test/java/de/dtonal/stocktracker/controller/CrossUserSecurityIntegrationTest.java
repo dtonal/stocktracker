@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -35,6 +36,7 @@ import de.dtonal.stocktracker.repository.UserRepository;
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
+@Tag("integration")
 public class CrossUserSecurityIntegrationTest {
 
     @Autowired

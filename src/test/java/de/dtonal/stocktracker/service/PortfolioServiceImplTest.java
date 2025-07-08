@@ -16,6 +16,7 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -37,6 +38,7 @@ import de.dtonal.stocktracker.repository.StockTransactionRepository;
 import de.dtonal.stocktracker.repository.UserRepository;
 
 @SpringBootTest
+@Tag("integration")
 class PortfolioServiceImplTest {
 
     @Autowired

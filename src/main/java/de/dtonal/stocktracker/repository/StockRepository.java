@@ -1,11 +1,11 @@
 package de.dtonal.stocktracker.repository;
 
-import de.dtonal.stocktracker.model.Stock;
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-import java.util.Optional;
+import de.dtonal.stocktracker.model.Stock;
 
 @Repository
 public interface StockRepository extends JpaRepository<Stock, String> {

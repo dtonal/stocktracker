@@ -1,52 +1,55 @@
 package de.dtonal.stocktracker.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import de.dtonal.stocktracker.config.ApplicationConfig;
-import de.dtonal.stocktracker.config.SecurityConfig;
-import de.dtonal.stocktracker.dto.PortfolioCreateRequest;
-import de.dtonal.stocktracker.dto.StockTransactionRequest;
-import de.dtonal.stocktracker.model.Portfolio;
-import de.dtonal.stocktracker.model.Stock;
-import de.dtonal.stocktracker.model.StockTransaction;
-import de.dtonal.stocktracker.model.TransactionType;
-import de.dtonal.stocktracker.repository.UserRepository;
-import de.dtonal.stocktracker.service.JwtService;
-import de.dtonal.stocktracker.service.PortfolioService;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Import;
-import org.springframework.http.MediaType;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.security.access.AccessDeniedException;
-
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.List;
-
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 
-import de.dtonal.stocktracker.model.PortfolioNotFoundException;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.web.servlet.MockMvc;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import de.dtonal.stocktracker.config.ApplicationConfig;
+import de.dtonal.stocktracker.config.SecurityConfig;
+import de.dtonal.stocktracker.dto.PortfolioCreateRequest;
 import de.dtonal.stocktracker.dto.PortfolioUpdateRequest;
+import de.dtonal.stocktracker.dto.StockTransactionRequest;
+import de.dtonal.stocktracker.model.Portfolio;
+import de.dtonal.stocktracker.model.PortfolioNotFoundException;
+import de.dtonal.stocktracker.model.Stock;
+import de.dtonal.stocktracker.model.StockTransaction;
+import de.dtonal.stocktracker.model.TransactionType;
+import de.dtonal.stocktracker.repository.UserRepository;
+import de.dtonal.stocktracker.service.JwtService;
+import de.dtonal.stocktracker.service.PortfolioService;
 
 @WebMvcTest(PortfolioController.class)
 @Import({ ApplicationConfig.class, SecurityConfig.class })
-class PortfolioControllerTest {
+@Tag("integration")
+public class PortfolioControllerTest {
 
     @Autowired
     private MockMvc mockMvc;

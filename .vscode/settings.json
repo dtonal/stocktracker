@@ -1,0 +1,15 @@
+{
+    "docwriter.style": "Javadoc",
+    "cSpell.language": "en,de-DE",
+    "cSpell.words": [
+        "assertj",
+        "csrf",
+        "dtonal",
+        "mockito",
+        "springframework",
+        "stocktracker",
+        "Stocktransactions"
+    ],
+    "java.compile.nullAnalysis.mode": "automatic",
+    "java.configuration.updateBuildConfiguration": "interactive"
+}

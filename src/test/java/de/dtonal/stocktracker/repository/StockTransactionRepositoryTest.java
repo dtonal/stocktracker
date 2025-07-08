@@ -11,6 +11,7 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
@@ -24,6 +25,7 @@ import de.dtonal.stocktracker.model.TransactionType;
 import de.dtonal.stocktracker.model.User;
 
 @DataJpaTest
+@Tag("integration")
 public class StockTransactionRepositoryTest {
     @Autowired
     private StockTransactionRepository stockTransactionRepository;

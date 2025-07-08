@@ -10,6 +10,7 @@ import java.util.Optional;
 import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
@@ -20,6 +21,7 @@ import de.dtonal.stocktracker.model.Role;
 import de.dtonal.stocktracker.model.User;
 
 @DataJpaTest
+@Tag("integration")
 public class UserRepositoryTest {
     @Autowired
     private UserRepository userRepository;

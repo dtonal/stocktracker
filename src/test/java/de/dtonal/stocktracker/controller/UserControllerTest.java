@@ -1,26 +1,24 @@
 package de.dtonal.stocktracker.controller;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
-import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.security.core.userdetails.UserDetailsService;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -28,12 +26,13 @@ import de.dtonal.stocktracker.config.ApplicationConfig;
 import de.dtonal.stocktracker.config.SecurityConfig;
 import de.dtonal.stocktracker.dto.UserResponse;
 import de.dtonal.stocktracker.model.User;
+import de.dtonal.stocktracker.repository.UserRepository;
 import de.dtonal.stocktracker.service.JwtService;
 import de.dtonal.stocktracker.service.UserService;
-import de.dtonal.stocktracker.repository.UserRepository;
 
 @WebMvcTest(UserController.class)
 @Import({ SecurityConfig.class, ApplicationConfig.class })
+@Tag("integration")
 public class UserControllerTest {
 
     @Autowired

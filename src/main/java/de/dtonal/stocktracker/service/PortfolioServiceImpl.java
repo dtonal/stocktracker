@@ -6,7 +6,6 @@ import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -27,7 +26,6 @@ import de.dtonal.stocktracker.repository.PortfolioRepository;
 import de.dtonal.stocktracker.repository.StockRepository;
 import de.dtonal.stocktracker.repository.StockTransactionRepository;
 import de.dtonal.stocktracker.repository.UserRepository;
-import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 
 @Service

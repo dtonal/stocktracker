@@ -6,6 +6,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.Optional;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -16,7 +17,8 @@ import org.springframework.security.test.context.support.WithMockUser;
 import de.dtonal.stocktracker.model.User;
 import de.dtonal.stocktracker.repository.UserRepository;
 
-@SpringBootTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
+@Tag("integration")
 public class UserServiceImplSecuredTest {
     @Autowired
     private UserService userService; // Injiziert die ECHTE Service-Instanz

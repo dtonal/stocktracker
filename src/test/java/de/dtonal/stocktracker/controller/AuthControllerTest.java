@@ -12,6 +12,7 @@ import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -35,6 +36,7 @@ import de.dtonal.stocktracker.service.UserServiceImpl;
 
 @WebMvcTest(controllers = AuthController.class)
 @Import({ SecurityConfig.class, ApplicationConfig.class })
+@Tag("integration")
 class AuthControllerTest {
     @Autowired
     private MockMvc mockMvc;
