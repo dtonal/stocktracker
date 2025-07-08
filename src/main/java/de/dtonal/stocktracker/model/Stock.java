@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * Repräsentiert die grundlegenden, statischen Informationen eines Wertpapiers
@@ -15,6 +16,7 @@ import lombok.Data;
 @Data
 @Entity
 @Table(name = "stocks", uniqueConstraints = @UniqueConstraint(columnNames = { "symbol", "exchange" }))
+@NoArgsConstructor
 public class Stock {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -45,8 +47,9 @@ public class Stock {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    public Stock() {
-        // Default constructor for JPA
+    public Stock(String symbol, String name) {
+        this.symbol = symbol;
+        this.name = name;
     }
 
     public Stock(String symbol, String name, String exchange, String currency) {
