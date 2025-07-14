@@ -3,20 +3,24 @@ package de.dtonal.stocktracker.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -26,12 +30,14 @@ import org.springframework.security.test.context.support.WithMockUser;
 import de.dtonal.stocktracker.dto.PortfolioCreateRequest;
 import de.dtonal.stocktracker.dto.PortfolioUpdateRequest;
 import de.dtonal.stocktracker.dto.StockTransactionRequest;
+import de.dtonal.stocktracker.model.HistoricalPrice;
 import de.dtonal.stocktracker.model.Portfolio;
 import de.dtonal.stocktracker.model.PortfolioNotFoundException;
 import de.dtonal.stocktracker.model.Stock;
 import de.dtonal.stocktracker.model.StockTransaction;
 import de.dtonal.stocktracker.model.TransactionType;
 import de.dtonal.stocktracker.model.User;
+import de.dtonal.stocktracker.repository.HistoricalPriceRepository;
 import de.dtonal.stocktracker.repository.PortfolioRepository;
 import de.dtonal.stocktracker.repository.StockRepository;
 import de.dtonal.stocktracker.repository.StockTransactionRepository;
@@ -43,6 +49,10 @@ class PortfolioServiceImplTest {
 
     @Autowired
     private PortfolioService portfolioService;
+    @MockBean
+    private TransactionService transactionService;
+    @MockBean
+    private PortfolioCalculationService portfolioCalculationService;
 
     @MockBean
     private PortfolioRepository portfolioRepository;
@@ -52,10 +62,13 @@ class PortfolioServiceImplTest {
     private StockTransactionRepository stockTransactionRepository;
     @MockBean
     private UserRepository userRepository;
+    @MockBean
+    private HistoricalPriceRepository historicalPriceRepository;
 
     private User user;
     private Portfolio portfolio;
     private Stock stock;
+    private Stock stock2;
 
     @BeforeEach
     void setUp() {
@@ -65,6 +78,8 @@ class PortfolioServiceImplTest {
         portfolio.setId("portfolio-id-456");
         stock = new Stock("AAPL", "Apple Inc.", "NASDAQ", "USD");
         stock.setId("stock-id-789");
+        stock2 = new Stock("GOOG", "Google LLC", "NASDAQ", "USD");
+        stock2.setId("stock-id-987");
     }
 
     @Test
@@ -121,57 +136,28 @@ class PortfolioServiceImplTest {
 
     @Test
     @WithMockUser(username = "test@example.com")
-    void addTransaction_shouldSucceed_whenUserIsOwner() {
-        // Mocking repository calls
-        when(portfolioRepository.findById("portfolio-id-456")).thenReturn(Optional.of(portfolio));
-        when(stockRepository.findBySymbol("AAPL")).thenReturn(Collections.singletonList(stock));
-        when(portfolioRepository.isOwnerOfPortfolio("portfolio-id-456", "test@example.com")).thenReturn(true);
-        when(portfolioRepository.save(any(Portfolio.class))).thenReturn(portfolio);
-
-        // Creating the request DTO
+    void addStockTransaction_shouldDelegateToTransactionService() {
         StockTransactionRequest request = new StockTransactionRequest();
-        request.setStockId("stock-id-789");
-        request.setStockSymbol("AAPL");
-        request.setQuantity(new BigDecimal("10"));
-        request.setPricePerShare(new BigDecimal("150.00"));
-        request.setTransactionDate(LocalDateTime.now());
-        request.setTransactionType(TransactionType.BUY);
+        portfolioService.addStockTransaction("portfolio-id-456", request);
+        verify(transactionService).addStockTransaction("portfolio-id-456", request);
+    }
 
-        // Calling the service method
-        StockTransaction transaction = portfolioService.addStockTransaction("portfolio-id-456", request);
-
-        // Asserting the results
-        assertThat(transaction).isNotNull();
-        assertThat(transaction.getStock()).isEqualTo(stock);
-        // Verify that the transaction was added to the portfolio's list
-        assertThat(portfolio.getTransactions()).contains(transaction);
-        // Verify that the portfolio was saved, which cascades the save to the transaction
-        verify(portfolioRepository).save(portfolio);
+    @Test
+    @WithMockUser(username = "test@example.com")
+    void deleteStockTransaction_shouldDelegateToTransactionService() {
+        portfolioService.deleteStockTransaction("portfolio-id-456", "tx-1");
+        verify(transactionService).deleteStockTransaction("portfolio-id-456", "tx-1");
     }
 
     @Test
     @WithMockUser(username = "another@user.com")
     void addTransaction_shouldFail_whenUserIsNotOwner() {
-        when(portfolioRepository.findById("stock-id-789")).thenReturn(Optional.of(portfolio));
         StockTransactionRequest request = new StockTransactionRequest();
+
+        doThrow(new AccessDeniedException("")).when(transactionService).addStockTransaction("stock-id-789", request);
 
         assertThatThrownBy(() -> portfolioService.addStockTransaction("stock-id-789", request))
                 .isInstanceOf(AccessDeniedException.class);
-    }
-
-    @Test
-    @WithMockUser(username = "test@example.com")
-    void getStockQuantity_shouldSucceed_whenUserIsOwner() {
-        when(portfolioRepository.isOwnerOfPortfolio("stock-id-789", "test@example.com")).thenReturn(true);
-        when(portfolioRepository.findById("stock-id-789")).thenReturn(Optional.of(portfolio));
-        when(stockTransactionRepository.findByPortfolioIdAndStockSymbol("stock-id-789", "AAPL")).thenReturn(List.of(
-                new StockTransaction(stock, portfolio, LocalDateTime.now(), new BigDecimal("10"), BigDecimal.ZERO,
-                        TransactionType.BUY),
-                new StockTransaction(stock, portfolio, LocalDateTime.now(), new BigDecimal("3"), BigDecimal.ZERO,
-                        TransactionType.SELL)));
-
-        BigDecimal quantity = portfolioService.getStockQuantity("stock-id-789", "AAPL");
-        assertThat(quantity).isEqualByComparingTo("7");
     }
 
     @Test
@@ -266,37 +252,15 @@ class PortfolioServiceImplTest {
 
     @Test
     @WithMockUser(username = "test@example.com")
-    void deleteStockTransaction_shouldSucceed() {
-        // Arrange
-        StockTransaction transaction1 = new StockTransaction(stock, portfolio, LocalDateTime.now(), BigDecimal.TEN, BigDecimal.ONE, TransactionType.BUY);
-        transaction1.setId("tx-1");
-        StockTransaction transaction2 = new StockTransaction(stock, portfolio, LocalDateTime.now(), BigDecimal.TEN, BigDecimal.ONE, TransactionType.BUY);
-        transaction2.setId("tx-2");
-        portfolio.getTransactions().addAll(List.of(transaction1, transaction2));
-
-        when(portfolioRepository.findById("portfolio-id-456")).thenReturn(Optional.of(portfolio));
-        when(stockTransactionRepository.findById("tx-1")).thenReturn(Optional.of(transaction1));
-        when(portfolioRepository.save(any(Portfolio.class))).thenReturn(portfolio);
-
-        // Act
-        portfolioService.deleteStockTransaction("portfolio-id-456", "tx-1");
-
-        // Assert
-        assertThat(portfolio.getTransactions()).hasSize(1);
-        assertThat(portfolio.getTransactions().get(0).getId()).isEqualTo("tx-2");
-        verify(portfolioRepository).save(portfolio);
+    void getTotalPortfolioValue_shouldDelegateToCalculationService() {
+        portfolioService.getTotalPortfolioValue("portfolio-id-456");
+        verify(portfolioCalculationService).getTotalPortfolioValue("portfolio-id-456");
     }
 
     @Test
     @WithMockUser(username = "test@example.com")
-    void deleteStockTransaction_shouldThrow_whenTransactionNotFound() {
-        // Arrange
-        when(portfolioRepository.findById("portfolio-id-456")).thenReturn(Optional.of(portfolio));
-        when(stockTransactionRepository.findById("non-existent-tx-id")).thenReturn(Optional.empty());
-
-        // Act & Assert
-        assertThatThrownBy(() -> portfolioService.deleteStockTransaction("portfolio-id-456", "non-existent-tx-id"))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Transaction with ID non-existent-tx-id not found.");
+    void getStockQuantity_shouldDelegateToCalculationService() {
+        portfolioService.getStockQuantity("portfolio-id-456", "AAPL");
+        verify(portfolioCalculationService).getStockQuantity("portfolio-id-456", "AAPL");
     }
 }

@@ -2,7 +2,10 @@ package de.dtonal.stocktracker.service;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
@@ -18,31 +21,30 @@ import de.dtonal.stocktracker.dto.PortfolioUpdateRequest;
 import de.dtonal.stocktracker.dto.StockTransactionRequest;
 import de.dtonal.stocktracker.model.Portfolio;
 import de.dtonal.stocktracker.model.PortfolioNotFoundException;
+import de.dtonal.stocktracker.model.Role;
 import de.dtonal.stocktracker.model.Stock;
 import de.dtonal.stocktracker.model.StockTransaction;
 import de.dtonal.stocktracker.model.TransactionType;
 import de.dtonal.stocktracker.model.User;
 import de.dtonal.stocktracker.repository.PortfolioRepository;
-import de.dtonal.stocktracker.repository.StockRepository;
-import de.dtonal.stocktracker.repository.StockTransactionRepository;
 import de.dtonal.stocktracker.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PortfolioServiceImpl implements PortfolioService {
 
     private final PortfolioRepository portfolioRepository;
     private final UserRepository userRepository;
-    private final StockRepository stockRepository;
-    private final StockTransactionRepository stockTransactionRepository;
+    private final TransactionService transactionService;
+    private final PortfolioCalculationService portfolioCalculationService;
 
     @Override
     @Transactional
     public Portfolio createPortfolio(PortfolioCreateRequest createRequest) {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userRepository.findByEmailIgnoreCase(username)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found for token"));
+        User user = getCurrentUser();
         Portfolio portfolio = new Portfolio();
         portfolio.setName(createRequest.getName());
         portfolio.setUser(user);
@@ -51,9 +53,7 @@ public class PortfolioServiceImpl implements PortfolioService {
 
     @Override
     public List<Portfolio> findPortfoliosForCurrentUser() {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userRepository.findByEmailIgnoreCase(username)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found for token"));
+        User user = getCurrentUser();
         return portfolioRepository.findByUserId(user.getId());
     }
 
@@ -66,12 +66,8 @@ public class PortfolioServiceImpl implements PortfolioService {
 
         Portfolio portfolio = portfolioOpt.get();
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String currentUsername = authentication.getName();
 
-        boolean isAdmin = authentication.getAuthorities().stream()
-                .anyMatch(r -> r.getAuthority().equals("ROLE_ADMIN"));
-
-        if (portfolio.getUser().getEmail().equals(currentUsername) || isAdmin) {
+        if (isUserOwnerOrAdmin(portfolio, authentication)) {
             return portfolioOpt;
         } else {
             return Optional.empty();
@@ -80,81 +76,29 @@ public class PortfolioServiceImpl implements PortfolioService {
 
     @Override
     @Transactional
-    @PreAuthorize("hasRole('ADMIN') or @portfolioRepository.isOwnerOfPortfolio(#portfolioId, authentication.name)")
     public StockTransaction addStockTransaction(String portfolioId, StockTransactionRequest transactionRequest) {
-        Portfolio portfolio = portfolioRepository.findById(portfolioId)
-                .orElseThrow(() -> new IllegalArgumentException("Portfolio not found"));
-
-        Stock stock = stockRepository.findBySymbol(transactionRequest.getStockSymbol())
-                .stream().findFirst()
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Stock not found with symbol: " + transactionRequest.getStockSymbol()));
-
-        StockTransaction transaction = new StockTransaction();
-        transaction.setStock(stock);
-        transaction.setTransactionType(transactionRequest.getTransactionType());
-        transaction.setQuantity(transactionRequest.getQuantity());
-        transaction.setPricePerShare(transactionRequest.getPricePerShare());
-        transaction.setTransactionDate(transactionRequest.getTransactionDate());
-        
-        portfolio.addTransaction(transaction);
-        
-        Portfolio savedPortfolio = portfolioRepository.save(portfolio);
-
-        // Return the managed instance from the saved portfolio, which has the generated ID.
-        return savedPortfolio.getTransactions().get(savedPortfolio.getTransactions().size() - 1);
+        return transactionService.addStockTransaction(portfolioId, transactionRequest);
     }
 
     @Override
-    @PreAuthorize("@portfolioRepository.isOwnerOfPortfolio(#portfolioId, authentication.name)")
     public BigDecimal getStockQuantity(String portfolioId, String stockSymbol) {
-        List<StockTransaction> transactions = stockTransactionRepository.findByPortfolioIdAndStockSymbol(portfolioId,
-                stockSymbol);
-        BigDecimal quantity = BigDecimal.ZERO;
-        for (StockTransaction t : transactions) {
-            if (t.getTransactionType() == TransactionType.BUY) {
-                quantity = quantity.add(t.getQuantity());
-            } else {
-                quantity = quantity.subtract(t.getQuantity());
-            }
-        }
-        return quantity;
+        return portfolioCalculationService.getStockQuantity(portfolioId, stockSymbol);
     }
 
     @Override
     public BigDecimal getTotalPortfolioValue(String portfolioId) {
-        portfolioRepository.findById(portfolioId)
-                .orElseThrow(() -> new IllegalArgumentException("Portfolio mit ID " + portfolioId + " nicht gefunden"));
-
-        List<StockTransaction> allTransactions = stockTransactionRepository.findByPortfolioId(portfolioId);
-
-        BigDecimal totalValue = BigDecimal.ZERO;
-        for (StockTransaction transaction : allTransactions) {
-            if (transaction.getTransactionType() == TransactionType.BUY) {
-                totalValue = totalValue.add(transaction.getQuantity().multiply(transaction.getPricePerShare()));
-            } else if (transaction.getTransactionType() == TransactionType.SELL) {
-                totalValue = totalValue.subtract(transaction.getQuantity().multiply(transaction.getPricePerShare()));
-            }
-        }
-
-        return totalValue;
+        return portfolioCalculationService.getTotalPortfolioValue(portfolioId);
     }
 
     @Override
     @Transactional
     public void deletePortfolio(String portfolioId) {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userRepository.findByEmailIgnoreCase(username)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found for token"));
+        User user = getCurrentUser();
 
         Portfolio portfolio = portfolioRepository.findById(portfolioId)
                 .orElseThrow(() -> new PortfolioNotFoundException("Portfolio with ID " + portfolioId + " not found."));
 
-        boolean isAdmin = user.getRoles().stream().anyMatch(role -> role.name().equals("ROLE_ADMIN"));
-
-        if (!portfolio.getUser().equals(user) && !isAdmin) {
-            throw new AccessDeniedException("You are not authorized to delete this portfolio.");
-        }
+        authorizePortfolioAccess(portfolio, user);
 
         portfolioRepository.delete(portfolio);
     }
@@ -174,21 +118,31 @@ public class PortfolioServiceImpl implements PortfolioService {
     @Override
     @Transactional
     public void deleteStockTransaction(String portfolioId, String transactionId) {
-        Portfolio portfolio = this.findById(portfolioId)
-                .orElseThrow(() -> new PortfolioNotFoundException("Portfolio with ID " + portfolioId + " not found."));
+        transactionService.deleteStockTransaction(portfolioId, transactionId);
+    }
+    
+    // --- Helper methods for pure logic ---
 
-        StockTransaction transactionToRemove = this.stockTransactionRepository.findById(transactionId)
-                .orElseThrow(() -> new IllegalArgumentException("Transaction with ID " + transactionId + " not found."));
+    void authorizePortfolioAccess(Portfolio portfolio, User user) {
+        boolean isAdmin = user.getRoles().contains(Role.ADMIN);
 
-        if (!transactionToRemove.getPortfolio().getId().equals(portfolio.getId())) {
-            // This case should ideally not happen if IDs are unique, but it's a good safeguard.
-            throw new IllegalArgumentException("Transaction with ID " + transactionId + " does not belong to portfolio with ID " + portfolioId);
+        if (!portfolio.getUser().equals(user) && !isAdmin) {
+            throw new AccessDeniedException("You are not authorized to delete this portfolio.");
         }
+    }
 
-        // Step 4: Remove the transaction from the portfolio's collection.
-        // Because of `orphanRemoval=true` on the @OneToMany relationship,
-        // JPA will automatically delete the transaction from the database when the parent is saved/flushed.
-        portfolio.removeTransaction(transactionToRemove);
-        portfolioRepository.save(portfolio);
+    boolean isUserOwnerOrAdmin(Portfolio portfolio, Authentication authentication) {
+        String currentUsername = authentication.getName();
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(r -> r.getAuthority().equals("ROLE_ADMIN"));
+        
+        return portfolio.getUser().getEmail().equals(currentUsername) || isAdmin;
+    }
+
+    // --- Helper methods with dependencies ---
+    private User getCurrentUser() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByEmailIgnoreCase(username)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found for token"));
     }
 }

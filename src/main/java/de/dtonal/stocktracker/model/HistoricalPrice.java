@@ -51,6 +51,10 @@ public class HistoricalPrice {
         return id;
     }
 
+    public void setId(String id) {
+        this.id = id;
+    }
+
     public Stock getStock() {
         return stock;
     }
@@ -111,11 +115,17 @@ public class HistoricalPrice {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         HistoricalPrice that = (HistoricalPrice) o;
+        
+        // For entities with generated IDs, two instances are only equal
+        // if they are persisted and share the same non-null ID.
+        if (id == null || that.id == null) {
+            return false;
+        }
         return id.equals(that.id);
     }
 
     @Override
     public int hashCode() {
-        return id.hashCode();
+        return id != null ? id.hashCode() : 0;
     }
 } 
