@@ -1,9 +1,12 @@
 package de.dtonal.stocktracker.config;
 
 import java.util.Arrays;
+import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -33,6 +36,9 @@ public class SecurityConfig {
     private final JwtAuthFilter jwtAuthFilter;
     private final UserDetailsService userDetailsService;
 
+    @Value("#{'${app.cors.allowed-origins}'.split(',')}")
+    private List<String> allowedOrigins;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, AuthenticationProvider authenticationProvider)
             throws Exception {
@@ -41,6 +47,7 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .exceptionHandling(e -> e.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .authorizeHttpRequests(authorizeRequests -> authorizeRequests
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()  // ERSTE Regel
                         .requestMatchers("/api/users/register", "/api/auth/**").permitAll()
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -53,16 +60,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        
-        // Erlaubte Origins für Vue.js Entwicklung
-        configuration.setAllowedOriginPatterns(Arrays.asList(
-            "http://localhost:5173",    // Vite (Standard für Vue 3)
-            "http://localhost:8080",    // Vue CLI (Standard für Vue 2/3)
-            "http://localhost:3000",    // Alternative Port
-            "http://localhost:4173",    // Vite Preview
-            "http://127.0.0.1:5173",    // Localhost-Alternative
-            "http://127.0.0.1:8080"     // Localhost-Alternative
-        ));
+        configuration.setAllowedOrigins(allowedOrigins); 
         
         // Erlaubte HTTP-Methoden
         configuration.setAllowedMethods(Arrays.asList(
