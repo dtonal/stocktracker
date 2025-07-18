@@ -1,0 +1,10 @@
+# railway.toml
+
+[build]
+builder = "NIXPACKS"
+
+[nixpacks]
+pkgs = ["...","openjdk-21"]
+
+[start]
+command = "java -Dserver.port=$PORT $JAVA_OPTS -jar target/*.jar" 
