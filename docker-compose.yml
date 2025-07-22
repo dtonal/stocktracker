@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  # Der PostgreSQL-Datenbank-Container
+  postgres:
+    image: postgres:15-alpine
+    container_name: stocktracker-postgres
+    environment:
+      POSTGRES_DB: stocktracker_dev
+      POSTGRES_USER: stocktracker_user
+      POSTGRES_PASSWORD: dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      # Dieser Volume sorgt dafür, dass deine DB-Daten gespeichert bleiben
+      - postgres_data:/var/lib/postgresql/data
+      # Dieser Volume führt unser Initialisierungs-Skript aus
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
+
+  # Optional: Ein grafisches Tool zur Verwaltung der Datenbank
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: stocktracker-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@stocktracker.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "8082:80"
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+volumes:
+  # Hier werden die DB-Daten auf deinem Computer gespeichert
+  postgres_data:
