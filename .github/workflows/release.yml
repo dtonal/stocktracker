@@ -1,0 +1,58 @@
+name: Deploy to Production
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+' # Trigger bei Tags wie v1.0.0, v1.2.3 etc.
+
+env:
+  PROJECT_ID: stocktracker-production-466713
+  REGION: europe-west3
+  IMAGE_REPO: stocktracker-images
+  IMAGE_NAME: stocktracker-backend
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: 'read'
+      id-token: 'write' # Nötig für Workload Identity Federation
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Authenticate to Google Cloud
+      id: auth
+      uses: google-github-actions/auth@v2
+      with:
+        workload_identity_provider: 'projects/1005405365040/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
+        service_account: 'github-actions-deployer@stocktracker-production-466713.iam.gserviceaccount.com'
+
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v2
+
+    - name: Configure Docker
+      run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
+
+    - name: Build and Tag Docker Image
+      run: |
+        # Wir verwenden den Namen des Git-Tags als Docker-Tag für eine klare Nachverfolgung
+        DOCKER_TAG=${{ github.ref_name }}
+        docker build -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.IMAGE_REPO }}/${{ env.IMAGE_NAME }}:${DOCKER_TAG} .
+    
+    - name: Push Docker Image to Artifact Registry
+      run: |
+        DOCKER_TAG=${{ github.ref_name }}
+        docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.IMAGE_REPO }}/${{ env.IMAGE_NAME }}:${DOCKER_TAG}
+
+    - name: Deploy to Cloud Run
+      run: |
+        DOCKER_TAG=${{ github.ref_name }}
+        gcloud run deploy ${{ env.IMAGE_NAME }} \
+          --image ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.IMAGE_REPO }}/${{ env.IMAGE_NAME }}:${DOCKER_TAG} \
+          --region ${{ env.REGION }} \
+          --allow-unauthenticated \
+          --set-env-vars="SPRING_PROFILES_ACTIVE=prod,DB_USER=stocktracker_app_user,DB_NAME=stocktracker_prod,CLOUD_SQL_CONNECTION_NAME=..." \
+          --set-secrets="DB_PASSWORD=DB_PASSWORD:latest,JWT_SECRET=JWT_SECRET:latest,FINNHUB_API_KEY=FINNHUB_API_KEY:latest"
