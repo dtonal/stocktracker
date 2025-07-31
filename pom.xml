@@ -75,11 +75,11 @@
 			<artifactId>postgresql</artifactId>
 			<scope>runtime</scope>
 		</dependency>
-		<!-- H2 nur noch für Tests behalten -->
+		<!-- H2 für lokale Entwicklung und Tests -->
 		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
-			<scope>test</scope> <!-- Scope von runtime zu test geändert -->
+			<scope>runtime</scope> <!-- Wieder auf runtime, damit das dev-Profil funktioniert -->
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
