@@ -47,7 +47,7 @@ jobs:
         DOCKER_TAG=${{ github.ref_name }}
         docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.IMAGE_REPO }}/${{ env.IMAGE_NAME }}:${DOCKER_TAG}
 
-    - name: Deploy to Cloud Run (Final Diagnostic)
+    - name: Deploy to Cloud Run (Final, Final Diagnostic)
       run: |
         DOCKER_TAG=${{ github.ref_name }}
         gcloud run deploy ${{ env.IMAGE_NAME }} \
@@ -57,4 +57,5 @@ jobs:
           --clear-secrets \
           --clear-env-vars \
           --clear-cloudsql-instances \
+          --clear-vpc-connector \
           --service-account=stocktracker-backend-runner@stocktracker-production-466713.iam.gserviceaccount.com
