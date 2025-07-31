@@ -56,3 +56,4 @@ jobs:
           --allow-unauthenticated \
           --set-env-vars="SPRING_PROFILES_ACTIVE=prod,DB_USER=stocktracker_app_user,DB_NAME=stocktracker_prod,CLOUD_SQL_CONNECTION_NAME=..." \
           --set-secrets="DB_PASSWORD=DB_PASSWORD:latest,JWT_SECRET=JWT_SECRET:latest,FINNHUB_API_KEY=FINNHUB_API_KEY:latest"
+          --service-account=stocktracker-backend-runner@stocktracker-production-466713.iam.gserviceaccount.com
