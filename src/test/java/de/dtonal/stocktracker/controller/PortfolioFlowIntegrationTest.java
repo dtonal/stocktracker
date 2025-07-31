@@ -101,6 +101,7 @@ public class PortfolioFlowIntegrationTest {
                 .content(objectMapper.writeValueAsString(createRequest)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.name").value("My Tech Portfolio"))
+                .andExpect(jsonPath("$.description").value("A portfolio for tech stocks"))
                 .andReturn();
         
         String portfolioId = JsonPath.read(createPortfolioResult.getResponse().getContentAsString(), "$.id");

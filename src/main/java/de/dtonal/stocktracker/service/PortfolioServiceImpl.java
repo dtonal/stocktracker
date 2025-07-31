@@ -2,14 +2,10 @@ package de.dtonal.stocktracker.service;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -22,9 +18,7 @@ import de.dtonal.stocktracker.dto.StockTransactionRequest;
 import de.dtonal.stocktracker.model.Portfolio;
 import de.dtonal.stocktracker.model.PortfolioNotFoundException;
 import de.dtonal.stocktracker.model.Role;
-import de.dtonal.stocktracker.model.Stock;
 import de.dtonal.stocktracker.model.StockTransaction;
-import de.dtonal.stocktracker.model.TransactionType;
 import de.dtonal.stocktracker.model.User;
 import de.dtonal.stocktracker.repository.PortfolioRepository;
 import de.dtonal.stocktracker.repository.UserRepository;
@@ -47,6 +41,7 @@ public class PortfolioServiceImpl implements PortfolioService {
         User user = getCurrentUser();
         Portfolio portfolio = new Portfolio();
         portfolio.setName(createRequest.getName());
+        portfolio.setDescription(createRequest.getDescription());
         portfolio.setUser(user);
         return portfolioRepository.save(portfolio);
     }
