@@ -10,6 +10,8 @@ env:
   REGION: europe-west3
   IMAGE_REPO: stocktracker-images
   IMAGE_NAME: stocktracker-backend
+  FRONTEND_URL: https://stocktracker-frontend-1005405365040.europe-west3.run.app
+
 
 jobs:
   build-and-deploy:
@@ -54,6 +56,6 @@ jobs:
           --image ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.IMAGE_REPO }}/${{ env.IMAGE_NAME }}:${DOCKER_TAG} \
           --region ${{ env.REGION }} \
           --allow-unauthenticated \
-          --set-env-vars="SPRING_PROFILES_ACTIVE=prod,DB_USER=stocktracker_app_user,DB_NAME=stocktracker_prod,CLOUD_SQL_CONNECTION_NAME=stocktracker-production-466713:europe-west3:stocktracker-postgres-instance" \
+          --set-env-vars="SPRING_PROFILES_ACTIVE=prod,DB_USER=stocktracker_app_user,DB_NAME=stocktracker_prod,CLOUD_SQL_CONNECTION_NAME=stocktracker-production-466713:europe-west3:stocktracker-postgres-instanceAPP_CORS_ALLOWED_ORIGINS=${{ env.FRONTEND_URL }}" \
           --set-secrets="DB_PASSWORD=DB_PASSWORD:latest,JWT_SECRET=JWT_SECRET:latest,FINNHUB_API_KEY=FINNHUB_API_KEY:latest" \
           --service-account=stocktracker-backend-runner@stocktracker-production-466713.iam.gserviceaccount.com
