@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class FinnhubSearchResult {
+public class StockSearchResult {
     private int count;
-    private List<FinnhubSearchItem> result;
+    private List<StockSearchItem> result;
 }

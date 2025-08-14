@@ -11,7 +11,7 @@ import org.springframework.web.client.RestTemplate;
 
 import de.dtonal.stocktracker.dto.CompanyProfile;
 import de.dtonal.stocktracker.dto.FinnhubQuote;
-import de.dtonal.stocktracker.dto.FinnhubSearchResult;
+import de.dtonal.stocktracker.dto.StockSearchResult;
 import de.dtonal.stocktracker.dto.PriceData;
 
 @Service
@@ -100,6 +100,30 @@ public class FinnhubStockDataService implements StockDataService {
         }
     }
 
+    @Override
+    public Optional<StockSearchResult> getStockSearchResult(String query) {
+        if (query == null || query.isBlank()) {
+            return Optional.empty();
+        }
+
+        String url = String.format("%s/search?q=%s&exchange=US&token=%s", apiUrl, query, apiKey);
+
+        try {
+            StockSearchResult searchResult = restTemplate.getForObject(url, StockSearchResult.class);
+            if (searchResult == null || searchResult.getCount() == 0 || searchResult.getResult() == null || searchResult.getResult().isEmpty()) {
+                logger.warn("Finnhub returned no data for query: {}", query);
+                return Optional.empty();
+            }
+            return Optional.of(searchResult);
+        } catch (HttpClientErrorException e) {
+            logger.error("HTTP error fetching data for query {}: {} - {}", query, e.getStatusCode(), e.getResponseBodyAsString());
+            return Optional.empty();
+        } catch (Exception e) {
+            logger.error("An unexpected error occurred fetching data for query {}: {}", query, e.getMessage(), e);
+            return Optional.empty();
+        }
+    }
+
     private Optional<String> getStockSymbol(String isin) {
         if (isin == null || isin.isBlank()) {
             return Optional.empty();
@@ -108,7 +132,7 @@ public class FinnhubStockDataService implements StockDataService {
         String url = String.format("%s/search?q=%s&token=%s", apiUrl, isin, apiKey);
     
         try {
-            FinnhubSearchResult searchResult = restTemplate.getForObject(url, FinnhubSearchResult.class);
+            StockSearchResult searchResult = restTemplate.getForObject(url, StockSearchResult.class);
             if (searchResult != null && searchResult.getResult() != null && !searchResult.getResult().isEmpty()) {
                 return Optional.of(searchResult.getResult().get(0).getSymbol());
             }
