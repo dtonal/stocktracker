@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
 
+import de.dtonal.stocktracker.dto.CompanyProfile;
 import de.dtonal.stocktracker.dto.PriceData;
 
 @SpringBootTest
@@ -40,5 +41,28 @@ public class FinnhubStockDataServiceTest {
        assertThat(priceData.getCurrentPrice()).isNotNull();
          assertThat(priceData.getCurrentPrice().doubleValue()).isGreaterThan(0);
        assertThat(priceData.getPreviousClosePrice()).isNotNull();
+   }
+
+   @Test
+   void getStockProfile_shouldReturnStockProfile_forValidIsin() {
+    // Arrange
+    String isin = "US0378331005";
+
+    // Act
+    Optional<CompanyProfile> result = stockDataService.getStockProfile(isin);
+
+    // Assert
+    assertThat(result).isPresent();
+    CompanyProfile profile = result.get();
+    System.out.println(profile);
+    assertThat(profile.getIsin()).isEqualTo(isin);
+    assertThat(profile.getCountry()).isNotNull();
+    assertThat(profile.getCurrency()).isNotNull();
+    assertThat(profile.getExchange()).isNotNull();
+    assertThat(profile.getName()).isNotNull();
+    assertThat(profile.getTicker()).isNotNull();
+    assertThat(profile.getIpo()).isNotNull();
+    assertThat(profile.getMarketCapitalization()).isGreaterThan(0);
+    assertThat(profile.getShareOutstanding()).isGreaterThan(0);
    }
 }

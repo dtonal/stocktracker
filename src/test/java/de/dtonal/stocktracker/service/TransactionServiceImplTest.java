@@ -1,10 +1,16 @@
 package de.dtonal.stocktracker.service;
 
-import de.dtonal.stocktracker.dto.StockTransactionRequest;
-import de.dtonal.stocktracker.model.*;
-import de.dtonal.stocktracker.repository.PortfolioRepository;
-import de.dtonal.stocktracker.repository.StockRepository;
-import de.dtonal.stocktracker.repository.StockTransactionRepository;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -14,17 +20,14 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.test.context.support.WithMockUser;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.Mockito.*;
+import de.dtonal.stocktracker.dto.StockTransactionRequest;
+import de.dtonal.stocktracker.model.Portfolio;
+import de.dtonal.stocktracker.model.Stock;
+import de.dtonal.stocktracker.model.StockTransaction;
+import de.dtonal.stocktracker.model.TransactionType;
+import de.dtonal.stocktracker.model.User;
+import de.dtonal.stocktracker.repository.PortfolioRepository;
+import de.dtonal.stocktracker.repository.StockTransactionRepository;
 
 @SpringBootTest
 @Tag("integration")
@@ -36,11 +39,9 @@ public class TransactionServiceImplTest {
     @MockBean
     private PortfolioRepository portfolioRepository;
     @MockBean
-    private StockRepository stockRepository;
+    private StockService stockService;
     @MockBean
     private StockTransactionRepository stockTransactionRepository;
-    @MockBean
-    private StockPriceUpdateService stockPriceUpdateService;
 
     private User user;
     private Portfolio portfolio;
@@ -61,9 +62,9 @@ public class TransactionServiceImplTest {
     void addStockTransaction_shouldSucceed_whenUserIsOwner() {
         // Arrange
         when(portfolioRepository.findById("portfolio-id-456")).thenReturn(Optional.of(portfolio));
-        when(stockRepository.findBySymbol("AAPL")).thenReturn(Collections.singletonList(stock));
         when(portfolioRepository.isOwnerOfPortfolio("portfolio-id-456", "test@example.com")).thenReturn(true);
         when(portfolioRepository.save(any(Portfolio.class))).thenReturn(portfolio);
+        when(stockService.getOrCreateStock("AAPL")).thenReturn(stock);
 
         StockTransactionRequest request = new StockTransactionRequest();
         request.setStockSymbol("AAPL");
@@ -81,39 +82,9 @@ public class TransactionServiceImplTest {
         assertThat(portfolio.getTransactions()).contains(transaction);
         verify(portfolioRepository).save(portfolio);
         // Verify that for an EXISTING stock, we do NOT fetch the price again.
-        verify(stockPriceUpdateService, never()).updateStockPrice(any(Stock.class));
-    }
+      }
 
-    @Test
-    @WithMockUser(username = "test@example.com")
-    void addStockTransaction_shouldFetchPrice_whenStockIsNew() {
-        // Arrange
-        String newStockSymbol = "NVDA";
-        Stock newStock = new Stock(newStockSymbol, "NVIDIA Corp", "NASDAQ", "USD");
-        newStock.setId("new-stock-id");
 
-        when(portfolioRepository.findById("portfolio-id-456")).thenReturn(Optional.of(portfolio));
-        when(stockRepository.findBySymbol(newStockSymbol)).thenReturn(Collections.emptyList());
-        when(stockRepository.save(any(Stock.class))).thenReturn(newStock);
-        when(portfolioRepository.isOwnerOfPortfolio("portfolio-id-456", "test@example.com")).thenReturn(true);
-        when(portfolioRepository.save(any(Portfolio.class))).thenReturn(portfolio);
-        doNothing().when(stockPriceUpdateService).updateStockPrice(any(Stock.class));
-
-        StockTransactionRequest request = new StockTransactionRequest();
-        request.setStockSymbol(newStockSymbol);
-        request.setQuantity(new BigDecimal("5"));
-        request.setPricePerShare(new BigDecimal("900.00"));
-        request.setTransactionDate(LocalDateTime.now());
-        request.setTransactionType(TransactionType.BUY);
-
-        // Act
-        transactionService.addStockTransaction("portfolio-id-456", request);
-
-        // Assert
-        verify(stockRepository).save(argThat(s -> newStockSymbol.equals(s.getSymbol())));
-        verify(stockPriceUpdateService, times(1)).updateStockPrice(newStock);
-        verify(portfolioRepository).save(portfolio);
-    }
 
     @Test
     @WithMockUser(username = "another@user.com")

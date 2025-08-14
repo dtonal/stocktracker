@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import de.dtonal.stocktracker.model.TransactionType;
+import de.dtonal.stocktracker.validation.RequireStockIdentifier;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
@@ -12,12 +13,12 @@ import lombok.NoArgsConstructor;
 
 @NoArgsConstructor
 @AllArgsConstructor
+@RequireStockIdentifier
 public class StockTransactionRequest {
 
     @NotNull
     private String portfolioId;
 
-    @NotNull
     private String stockId;
 
     @NotNull(message = "Transaction date cannot be null.")
@@ -35,7 +36,6 @@ public class StockTransactionRequest {
     @NotNull(message = "Transaction type cannot be null.")
     private TransactionType transactionType;
 
-    @NotNull
     private String stockSymbol;
 
     public String getStockId() {

@@ -6,7 +6,6 @@ import de.dtonal.stocktracker.model.PortfolioNotFoundException;
 import de.dtonal.stocktracker.model.Stock;
 import de.dtonal.stocktracker.model.StockTransaction;
 import de.dtonal.stocktracker.repository.PortfolioRepository;
-import de.dtonal.stocktracker.repository.StockRepository;
 import de.dtonal.stocktracker.repository.StockTransactionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,9 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class TransactionServiceImpl implements TransactionService {
 
     private final PortfolioRepository portfolioRepository;
-    private final StockRepository stockRepository;
     private final StockTransactionRepository stockTransactionRepository;
-    private final StockPriceUpdateService stockPriceUpdateService;
+    private final StockService stockService;
 
     @Override
     @Transactional
@@ -31,7 +29,7 @@ public class TransactionServiceImpl implements TransactionService {
         Portfolio portfolio = portfolioRepository.findById(portfolioId)
                 .orElseThrow(() -> new PortfolioNotFoundException("Portfolio not found with id: " + portfolioId));
 
-        Stock stock = findOrCreateStock(transactionRequest.getStockSymbol());
+        Stock stock = stockService.getOrCreateStock(transactionRequest.getStockSymbol());
 
         StockTransaction transaction = createTransactionFromRequest(stock, transactionRequest);
 
@@ -65,27 +63,6 @@ public class TransactionServiceImpl implements TransactionService {
         return transaction.getPortfolio().getId().equals(portfolio.getId());
     }
 
-    Stock findOrCreateStock(String stockSymbol) {
-        return stockRepository.findBySymbol(stockSymbol)
-            .stream()
-            .findFirst()
-            .orElseGet(() -> createNewStock(stockSymbol));
-    }
-
-    Stock createNewStock(String stockSymbol) {
-        log.info("Stock with symbol {} not found. Creating a new one.", stockSymbol);
-        Stock newStock = new Stock(
-            stockSymbol,
-            "New Stock - Name TBD",
-            "US",
-            "USD"
-        );
-        Stock savedStock = stockRepository.save(newStock);
-        
-        log.info("New stock {} created, fetching initial price.", savedStock.getSymbol());
-        stockPriceUpdateService.updateStockPrice(savedStock);
-        return savedStock;
-    }
 
     StockTransaction createTransactionFromRequest(Stock stock, StockTransactionRequest transactionRequest) {
         StockTransaction transaction = new StockTransaction();
