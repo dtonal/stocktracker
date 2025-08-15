@@ -34,3 +34,17 @@ build/
 
 ### application-local.properties ###
 **/application-local.properties
+
+# Lokale Datenbank
+data/
+*.mv.db
+
+# Maven Build-Ordner
+target/
+
+# Log-Dateien
+*.log
+
+# IDE-spezifische Dateien
+.idea/
+*.iml

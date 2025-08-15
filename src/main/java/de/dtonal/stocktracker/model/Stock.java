@@ -153,6 +153,6 @@ public class Stock {
 
     @Override
     public int hashCode() {
-        return id.hashCode();
+        return symbol.hashCode();
     }
 }
